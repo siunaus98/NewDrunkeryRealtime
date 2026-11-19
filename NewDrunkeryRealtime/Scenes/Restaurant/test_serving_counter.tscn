@@ -1,0 +1,48 @@
+[gd_scene load_steps=4 format=3 uid="uid://co13hfc8pcjcr"]
+
+[ext_resource type="Texture2D" path="res://ArtResource/Restaurant/serving_counter.svg" id="1_counter"]
+[ext_resource type="Script" path="res://Scripts/Orders/TestServingCounter.gd" id="2_counter_script"]
+[ext_resource type="Script" path="res://Scripts/Orders/ServingCounterMarkerLayer.gd" id="3_marker_layer"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_counter"]
+size = Vector2(880, 360)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_counter_item_blocker"]
+size = Vector2(880, 360)
+
+[node name="TestServingCounter" type="StaticBody2D" unique_id=2096463108]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("2_counter_script")
+
+[node name="LowerSprite" type="Sprite2D" parent="." unique_id=960004085]
+texture = ExtResource("1_counter")
+offset = Vector2(0, 294)
+region_enabled = true
+region_rect = Rect2(0, 588, 1024, 436)
+
+[node name="TopSprite" type="Sprite2D" parent="." unique_id=1120377480]
+texture = ExtResource("1_counter")
+offset = Vector2(0, -218)
+region_enabled = true
+region_rect = Rect2(0, 0, 1024, 588)
+
+[node name="HighlightLayer" type="Node2D" parent="."]
+
+[node name="MarkerLayer" type="Node2D" parent="."]
+script = ExtResource("3_marker_layer")
+
+[node name="SortAnchor" type="Marker2D" parent="." unique_id=1582288629]
+position = Vector2(0, 118)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=639489626]
+position = Vector2(0, -60)
+shape = SubResource("RectangleShape2D_counter")
+
+[node name="ItemBlocker" type="StaticBody2D" parent="." unique_id=299496946]
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ItemBlocker" unique_id=515799026]
+position = Vector2(0, -60)
+shape = SubResource("RectangleShape2D_counter_item_blocker")

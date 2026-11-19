@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://16lhh5n3w0a0"]
+
+[ext_resource type="Texture2D" path="res://ArtResource/Cooker/assembly_station.svg" id="1_station"]
+[ext_resource type="Script" uid="uid://idkytn5tnh2t" path="res://Scripts/Kitchen/AssemblyStation.gd" id="2_station_script"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_station"]
+size = Vector2(900, 520)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_station_item_blocker"]
+size = Vector2(860, 480)
+
+[node name="AssemblyStation" type="StaticBody2D" unique_id=1895032329]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("2_station_script")
+interaction_area_center = Vector2(0, -100)
+interaction_area_size = Vector2(900, 400)
+interaction_area_columns = 13
+interaction_area_rows = 4
+item_normal_scale = Vector2(0.56, 0.56)
+item_highlight_scale = Vector2(0.56, 0.56)
+item_span_width = 760.0
+item_row_y = -28.0
+
+[node name="LowerSprite" type="Sprite2D" parent="." unique_id=1116858065]
+texture = ExtResource("1_station")
+offset = Vector2(0, 253)
+region_enabled = true
+region_rect = Rect2(0, 506, 1024, 518)
+
+[node name="TopSprite" type="Sprite2D" parent="." unique_id=1356090004]
+texture = ExtResource("1_station")
+offset = Vector2(0, -259)
+region_enabled = true
+region_rect = Rect2(0, 0, 1024, 506)
+
+[node name="ItemLayer" type="Node2D" parent="." unique_id=300443088]
+position = Vector2(0, -70)
+
+[node name="ItemAnchor" type="Marker2D" parent="ItemLayer" unique_id=407336925]
+
+[node name="ItemSprites" type="Node2D" parent="ItemLayer" unique_id=455870245]
+
+[node name="SortAnchor" type="Marker2D" parent="." unique_id=795578278]
+position = Vector2(0, 132)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=2084186137]
+position = Vector2(0, 38.5)
+shape = SubResource("RectangleShape2D_station")
+
+[node name="ItemBlocker" type="StaticBody2D" parent="."]
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ItemBlocker"]
+position = Vector2(0, -3.5)
+shape = SubResource("RectangleShape2D_station_item_blocker")

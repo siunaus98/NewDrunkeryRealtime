@@ -1,0 +1,33 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Enemies/MapMechanismBoss.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://ArtResource/Generated/Enemy/vulture_boss.svg" id="2_texture"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
+radius = 92.0
+
+[node name="VultureBoss" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 4
+script = ExtResource("1_script")
+boss_kind = &"sandstorm"
+max_health = 24000
+hit_radius = 160.0
+hit_center_offset = Vector2(0, 12)
+hit_center_follows_sprite = true
+contact_damage = 10
+contact_damage_radius = 140.0
+move_speed = 96.0
+combat_spacing = 250.0
+attack_interval = 2.5
+drop_count = 5
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(1.55, 1.55)
+texture = ExtResource("2_texture")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_boss")
+
+[node name="HealthLabel" type="Label" parent="."]
+visible = false

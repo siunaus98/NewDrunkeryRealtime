@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://dnm03u54ij7eg"]
+
+[ext_resource type="Texture2D" path="res://ArtResource/Restaurant/prep_table.svg" id="1_table"]
+[ext_resource type="Script" uid="uid://bwpkcsjvi4v62" path="res://Scripts/Kitchen/TestTable.gd" id="2_table_script"]
+[ext_resource type="Texture2D" path="res://ArtResource/Generated/Ingredient/meat_red.svg" id="3_meat"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_table"]
+size = Vector2(606, 471)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_table_item_blocker"]
+size = Vector2(606, 555)
+
+[node name="TestTable" type="StaticBody2D" unique_id=2090100106]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("2_table_script")
+interaction_area_center = Vector2(0, -150)
+interaction_area_size = Vector2(600, 288)
+
+[node name="LowerSprite" type="Sprite2D" parent="." unique_id=16407043]
+texture = ExtResource("1_table")
+offset = Vector2(0, 210)
+region_enabled = true
+region_rect = Rect2(0, 420, 1024, 604)
+
+[node name="TopSprite" type="Sprite2D" parent="." unique_id=880482439]
+texture = ExtResource("1_table")
+offset = Vector2(0, -302)
+region_enabled = true
+region_rect = Rect2(0, 0, 1024, 420)
+
+[node name="ItemLayer" type="Node2D" parent="." unique_id=553703203]
+position = Vector2(0, -110)
+
+[node name="ItemAnchor" type="Marker2D" parent="ItemLayer" unique_id=1491442906]
+
+[node name="MeatSprite" type="Sprite2D" parent="ItemLayer" unique_id=1961162312]
+position = Vector2(0, -65)
+scale = Vector2(2.666667, 2.666667)
+texture = ExtResource("3_meat")
+
+[node name="SortAnchor" type="Marker2D" parent="." unique_id=262538898]
+position = Vector2(0, 144)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1214876046]
+position = Vector2(1, 58.5)
+shape = SubResource("RectangleShape2D_table")
+
+[node name="ItemBlocker" type="StaticBody2D" parent="."]
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ItemBlocker"]
+position = Vector2(1, 16.5)
+shape = SubResource("RectangleShape2D_table_item_blocker")

@@ -1,0 +1,44 @@
+# Godot caches and local user data. Keep source .uid and .import files.
+.godot/
+.godot_user_data/
+.godot_user_data*/
+export_credentials.cfg
+.godot-export-credentials
+
+# Local experiments, captures, logs, backups and assistant state.
+_artifact_work/
+.artifact_work/
+outputs/
+Error_PS/
+.agents/
+.codex/
+.aws/
+.tmp_*
+*.log
+*.log.err
+__pycache__/
+*.py[cod]
+
+# Exports and build outputs.
+build/
+builds/
+dist/
+exports/
+*.exe
+*.pck
+*.app/
+
+# OS/editor files and private configuration.
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12

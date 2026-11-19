@@ -1,0 +1,62 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Kitchen/IngredientStorageCabinet.gd" id="1_storage_script"]
+[ext_resource type="Texture2D" path="res://ArtResource/Restaurant/storage_cabinet.svg" id="2_storage_texture"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_storage"]
+size = Vector2(120, 96)
+
+[node name="IngredientStorageCabinet" type="StaticBody2D"]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("1_storage_script")
+
+[node name="ItemBlocker" type="StaticBody2D" parent="."]
+collision_layer = 16
+collision_mask = 0
+
+[node name="CabinetSprite" type="Sprite2D" parent="."]
+position = Vector2(0, -10)
+scale = Vector2(0.125, 0.125)
+texture = ExtResource("2_storage_texture")
+
+[node name="ItemIcon" type="Sprite2D" parent="."]
+position = Vector2(0, -22)
+scale = Vector2(0.56, 0.56)
+
+[node name="FrozenStockLabel" type="Label" parent="."]
+offset_left = -58.0
+offset_top = 32.0
+offset_right = -4.0
+offset_bottom = 56.0
+horizontal_alignment = 0
+theme_override_colors/font_color = Color(0.96, 0.82, 0.52, 1)
+theme_override_colors/font_outline_color = Color(0.17, 0.11, 0.07, 0.95)
+theme_override_font_sizes/font_size = 18
+theme_override_constants/outline_size = 4
+text = "冻0"
+
+[node name="FreshStockLabel" type="Label" parent="."]
+offset_left = 4.0
+offset_top = 32.0
+offset_right = 58.0
+offset_bottom = 56.0
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.96, 0.82, 0.52, 1)
+theme_override_colors/font_outline_color = Color(0.17, 0.11, 0.07, 0.95)
+theme_override_font_sizes/font_size = 18
+theme_override_constants/outline_size = 4
+text = "鲜0"
+
+[node name="SortAnchor" type="Marker2D" parent="."]
+position = Vector2(0, 28)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 14)
+shape = SubResource("RectangleShape2D_storage")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ItemBlocker"]
+position = Vector2(0, 14)
+shape = SubResource("RectangleShape2D_storage")
+
+

@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Kitchen/SupportFacility.gd" id="1_support_facility"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_support"]
+size = Vector2(104, 104)
+
+[node name="SupportFacility" type="StaticBody2D"]
+collision_layer = 4
+collision_mask = 0
+script = ExtResource("1_support_facility")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_support")
+
+[node name="ItemBlocker" type="StaticBody2D" parent="."]
+collision_layer = 16
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ItemBlocker"]
+shape = SubResource("RectangleShape2D_support")

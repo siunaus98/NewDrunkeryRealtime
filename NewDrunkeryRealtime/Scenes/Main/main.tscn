@@ -1,0 +1,543 @@
+[gd_scene load_steps=38 format=3 uid="uid://df7o3qr2j2qt2"]
+
+[ext_resource type="Script" uid="uid://c5b5snn1402o7" path="res://Scripts/Core/Main.gd" id="1_main"]
+[ext_resource type="Script" uid="uid://eat86fh2tuav" path="res://Scripts/Core/PrototypeMap.gd" id="2_map"]
+[ext_resource type="Script" uid="uid://375uxif5x30n" path="res://Scripts/Player/RealtimePlayer.gd" id="3_player"]
+[ext_resource type="Texture2D" uid="uid://c2cu02pbetfp" path="res://ArtResource/Player/CBB_QQ_172x271.png" id="4_chibabao"]
+[ext_resource type="Script" uid="uid://b5i8wgttnvrs6" path="res://Scripts/Core/SmoothFollowCamera.gd" id="5_camera"]
+[ext_resource type="Script" uid="uid://c3inhigfbjmlm" path="res://Scripts/Player/AimIndicator.gd" id="6_indicator"]
+[ext_resource type="Script" path="res://Scripts/Player/AttackVisualizer.gd" id="7_attack_visualizer"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/test_cooker.tscn" id="8_test_cooker"]
+[ext_resource type="Script" path="res://Scripts/Player/DashCooldownIndicator.gd" id="9_dash_indicator"]
+[ext_resource type="Texture2D" path="res://ArtResource/Generated/Ingredient/meat_red.svg" id="10_test_meat"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/test_table.tscn" id="11_test_table"]
+[ext_resource type="Script" path="res://Scripts/Player/ItemPushDebug.gd" id="12_item_push_debug"]
+[ext_resource type="Script" path="res://Scripts/Player/InteractionProgressBar.gd" id="13_progress_bar"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/assembly_station.tscn" id="14_assembly_station"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/loose_item.tscn" id="15_loose_item"]
+[ext_resource type="Script" path="res://Scripts/UI/OrderHud.gd" id="16_order_hud"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/test_serving_counter.tscn" id="17_test_serving_counter"]
+[ext_resource type="Script" path="res://Scripts/Core/LevelFlowController.gd" id="18_level_flow_controller"]
+[ext_resource type="Script" path="res://Scripts/Orders/OrderManager.gd" id="19_order_manager"]
+[ext_resource type="Script" path="res://Scripts/UI/RunStatusHud.gd" id="20_run_status_hud"]
+[ext_resource type="Script" path="res://Scripts/Kitchen/StorageManager.gd" id="21_storage_manager"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/ingredient_storage_cabinet.tscn" id="22_storage_cabinet"]
+[ext_resource type="Script" path="res://Scripts/Battle/BattleManager.gd" id="23_battle_manager"]
+[ext_resource type="Script" path="res://Scripts/Core/ScarabMechanismController.gd" id="39_scarab_mechanism"]
+[ext_resource type="Script" path="res://Scripts/Core/QuicksandMechanismController.gd" id="40_quicksand_mechanism"]
+[ext_resource type="Script" path="res://Scripts/Core/WindSandMechanismController.gd" id="41_wind_sand_mechanism"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/night_rest_interactable.tscn" id="25_night_rest_interactable"]
+[ext_resource type="Texture2D" path="res://ArtResource/Restaurant/salesperson.svg" id="26_salesperson"]
+[ext_resource type="Script" path="res://Scripts/Core/LevelRefs.gd" id="28_level_refs"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/bake_cooker.tscn" id="33_bake_cooker"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/grind_cooker.tscn" id="34_grind_cooker"]
+[ext_resource type="Script" path="res://Scripts/Forage/ForageRegion.gd" id="35_forage_region"]
+[ext_resource type="PackedScene" path="res://Scenes/Restaurant/fixed_barrel_blocker.tscn" id="36_fixed_barrel"]
+[ext_resource type="Texture2D" path="res://ArtResource/Restaurant/goddess_statue.svg" id="37_goddess_statue"]
+
+[ext_resource type="Script" path="res://Scripts/Kitchen/PlateSink.gd" id="42_sink"]
+[ext_resource type="Script" path="res://Scripts/Kitchen/TrashBin.gd" id="43_trash_bin"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_player"]
+radius = 20.0
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_item_push"]
+radius = 24.0
+height = 112.0
+
+[node name="Main" type="Node2D" unique_id=613333301]
+script = ExtResource("1_main")
+
+[node name="PrototypeMap" type="Node2D" parent="." unique_id=1855637634]
+position = Vector2(0, -256)
+script = ExtResource("2_map")
+
+[node name="FrontlineSpawnA" type="Marker2D" parent="."]
+position = Vector2(320, -128)
+
+[node name="FrontlineSpawnB" type="Marker2D" parent="."]
+position = Vector2(2304, -128)
+
+[node name="FrontlineSpawnC" type="Marker2D" parent="."]
+position = Vector2(4288, -128)
+
+[node name="FrontlineSpawnD" type="Marker2D" parent="."]
+position = Vector2(1600, -1280)
+
+[node name="FrontlineSpawnE" type="Marker2D" parent="."]
+position = Vector2(3008, -1280)
+
+[node name="ForageRegionNear" type="Node2D" parent="."]
+script = ExtResource("35_forage_region")
+region_id = &"near"
+display_name = "近门旱地"
+forage_item_ids = Array[StringName]([&"crisp_sprout", &"sand_potato", &"sunny_berry"])
+max_active_points = 5
+initial_spawn_count = 4
+spawn_interval_min = 5.0
+spawn_interval_max = 7.0
+search_duration = 3.0
+selection_duration = 1.05
+body_color = Color(0.48, 0.44, 0.2, 1)
+body_highlight_color = Color(0.74, 0.64, 0.28, 1)
+accent_color = Color(0.18, 0.66, 0.32, 1)
+
+[node name="ForageRegionLeft" type="Node2D" parent="."]
+script = ExtResource("35_forage_region")
+region_id = &"left"
+display_name = "西侧花冠区"
+forage_item_ids = Array[StringName]([&"dryfrost_cabbage", &"stone_bloom", &"sunny_berry"])
+max_active_points = 3
+initial_spawn_count = 2
+spawn_interval_min = 8.0
+spawn_interval_max = 11.0
+search_duration = 4.0
+selection_duration = 0.95
+body_color = Color(0.34, 0.42, 0.2, 1)
+body_highlight_color = Color(0.54, 0.66, 0.28, 1)
+accent_color = Color(0.18, 0.55, 0.54, 1)
+
+[node name="ForageRegionRight" type="Node2D" parent="."]
+script = ExtResource("35_forage_region")
+region_id = &"right"
+display_name = "东侧砂谷区"
+forage_item_ids = Array[StringName]([&"golden_wheat", &"dill", &"sun_seed"])
+max_active_points = 3
+initial_spawn_count = 2
+spawn_interval_min = 8.0
+spawn_interval_max = 11.0
+search_duration = 5.0
+selection_duration = 0.85
+body_color = Color(0.62, 0.45, 0.18, 1)
+body_highlight_color = Color(0.86, 0.64, 0.24, 1)
+accent_color = Color(0.91, 0.72, 0.22, 1)
+
+[node name="ForageRegionTop" type="Node2D" parent="."]
+script = ExtResource("35_forage_region")
+region_id = &"top"
+display_name = "顶部沙冠区"
+forage_item_ids = Array[StringName]([])
+max_active_points = 0
+initial_spawn_count = 0
+spawn_interval_min = 12.0
+spawn_interval_max = 16.0
+search_duration = 5.0
+selection_duration = 0.75
+body_color = Color(0.34, 0.31, 0.26, 1)
+body_highlight_color = Color(0.58, 0.52, 0.38, 1)
+accent_color = Color(0.94, 0.66, 0.16, 1)
+
+[node name="StorageCabinetRedManeLamb" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1600, 832)
+stored_item_id = &"meat_red"
+
+
+[node name="StorageCabinetDesertBird" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1728, 832)
+stored_item_id = &"meat_white"
+
+[node name="StorageCabinetSandHare" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1856, 832)
+stored_item_id = &"sand_hare"
+
+[node name="StorageCabinetCrispSprout" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1984, 832)
+stored_item_id = &"crisp_sprout"
+
+[node name="StorageCabinetCamelMeat" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1600, 960)
+stored_item_id = &"camel_meat"
+
+[node name="StorageCabinetDryfrostCabbage" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1728, 960)
+stored_item_id = &"dryfrost_cabbage"
+
+[node name="StorageCabinetSunnyBerry" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1856, 960)
+stored_item_id = &"sunny_berry"
+
+[node name="StorageCabinetSandPotato" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1984, 960)
+stored_item_id = &"sand_potato"
+
+[node name="StorageCabinetStoneBloom" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1600, 1088)
+stored_item_id = &"stone_bloom"
+
+[node name="StorageCabinetDill" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1728, 1088)
+stored_item_id = &"dill"
+
+[node name="StorageCabinetGoldenWheat" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1856, 1088)
+stored_item_id = &"golden_wheat"
+
+[node name="StorageCabinetSunSeed" parent="." instance=ExtResource("22_storage_cabinet")]
+position = Vector2(1984, 1088)
+stored_item_id = &"sun_seed"
+
+[node name="IngredientSlot06" type="Marker2D" parent="."]
+position = Vector2(2112, 960)
+
+[node name="IngredientSlot07" type="Marker2D" parent="."]
+position = Vector2(2112, 1088)
+
+[node name="IngredientSlot08" type="Marker2D" parent="."]
+position = Vector2(2112, 1216)
+
+[node name="BakeCooker" parent="." instance=ExtResource("33_bake_cooker")]
+position = Vector2(2624, 832)
+scale = Vector2(0.17, 0.17)
+
+[node name="TestTable" parent="." instance=ExtResource("11_test_table")]
+position = Vector2(2112, 1088)
+scale = Vector2(0.21, 0.21)
+
+[node name="TestCooker" parent="." instance=ExtResource("8_test_cooker")]
+position = Vector2(2496, 1088)
+scale = Vector2(0.17, 0.17)
+
+[node name="GrindCooker" parent="." instance=ExtResource("34_grind_cooker")]
+position = Vector2(2880, 1088)
+scale = Vector2(0.17, 0.17)
+
+[node name="AssemblyStation" parent="." instance=ExtResource("14_assembly_station")]
+position = Vector2(2624, 1280)
+scale = Vector2(0.4, 0.4)
+
+[node name="FixedBarrelLeftA" parent="." instance=ExtResource("36_fixed_barrel")]
+position = Vector2(1536, 576)
+
+[node name="FixedBarrelLeftB" parent="." instance=ExtResource("36_fixed_barrel")]
+position = Vector2(1792, 576)
+
+[node name="FixedBarrelLeftC" parent="." instance=ExtResource("36_fixed_barrel")]
+position = Vector2(2048, 576)
+
+[node name="FixedBarrelLeftD" parent="." instance=ExtResource("36_fixed_barrel")]
+position = Vector2(2560, 576)
+
+[node name="FixedBarrelCenterA" parent="." instance=ExtResource("36_fixed_barrel")]
+position = Vector2(2816, 576)
+
+[node name="FixedBarrelRightA" parent="." instance=ExtResource("36_fixed_barrel")]
+position = Vector2(3072, 576)
+
+[node name="TestServingCounter" parent="." instance=ExtResource("17_test_serving_counter")]
+position = Vector2(1088, 960)
+rotation = 1.5708
+scale = Vector2(0.44, 0.25)
+slot_count = 1
+slot_number_offset = 0
+slot_span_width = 820.0
+slot_size = Vector2(780, 190)
+layout_footprint_cells = Vector2i(1, 3)
+movable_by_player = false
+
+[node name="TestServingCounter2" parent="." instance=ExtResource("17_test_serving_counter")]
+position = Vector2(1088, 1344)
+rotation = 1.5708
+scale = Vector2(0.44, 0.25)
+slot_count = 1
+slot_number_offset = 1
+slot_span_width = 820.0
+slot_size = Vector2(780, 190)
+layout_footprint_cells = Vector2i(1, 3)
+movable_by_player = false
+
+[node name="TestServingCounter3" parent="." instance=ExtResource("17_test_serving_counter")]
+position = Vector2(1728, 1856)
+scale = Vector2(0.44, 0.25)
+slot_count = 1
+slot_number_offset = 2
+slot_span_width = 820.0
+slot_size = Vector2(780, 190)
+layout_footprint_cells = Vector2i(3, 1)
+movable_by_player = false
+
+[node name="TestServingCounter4" parent="." instance=ExtResource("17_test_serving_counter")]
+position = Vector2(2368, 1856)
+scale = Vector2(0.44, 0.25)
+slot_count = 1
+slot_number_offset = 3
+slot_span_width = 820.0
+slot_size = Vector2(780, 190)
+layout_footprint_cells = Vector2i(3, 1)
+movable_by_player = false
+
+[node name="TestServingCounter5" parent="." instance=ExtResource("17_test_serving_counter")]
+position = Vector2(2880, 1856)
+scale = Vector2(0.44, 0.25)
+slot_count = 1
+slot_number_offset = 4
+slot_span_width = 820.0
+slot_size = Vector2(780, 190)
+layout_footprint_cells = Vector2i(3, 1)
+movable_by_player = false
+
+[node name="TestServingCounter6" parent="." instance=ExtResource("17_test_serving_counter")]
+position = Vector2(3520, 960)
+rotation = 1.5708
+scale = Vector2(0.44, 0.25)
+slot_count = 1
+slot_number_offset = 5
+slot_span_width = 820.0
+slot_size = Vector2(780, 190)
+layout_footprint_cells = Vector2i(1, 3)
+movable_by_player = false
+
+[node name="NightMerchant" parent="." instance=ExtResource("25_night_rest_interactable")]
+position = Vector2(2240, 320)
+display_name = "商人"
+sprite_texture = ExtResource("26_salesperson")
+sprite_offset = Vector2(0, -54)
+sprite_scale = Vector2(0.72, 0.72)
+collision_size = Vector2(134, 172)
+collision_offset = Vector2(0, 10)
+sort_anchor_offset = Vector2(0, 46)
+interaction_area_center = Vector2(0, -10)
+interaction_area_size = Vector2(188, 188)
+
+[node name="BlessingStatue" parent="." instance=ExtResource("25_night_rest_interactable")]
+position = Vector2(2368, 832)
+interaction_type = &"blessing_statue"
+display_name = "女神像"
+show_name_label = false
+always_visible = true
+movable_by_player = true
+sprite_texture = ExtResource("37_goddess_statue")
+sprite_offset = Vector2(0, -48)
+sprite_scale = Vector2(0.72, 0.72)
+collision_size = Vector2(104, 132)
+collision_offset = Vector2(0, 2)
+sort_anchor_offset = Vector2(0, 42)
+pickup_distance = 170.0
+interaction_area_center = Vector2(0, -12)
+interaction_area_size = Vector2(164, 168)
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=775900327]
+position = Vector2(2304, 1408)
+collision_layer = 1
+collision_mask = 4
+z_index = 1
+script = ExtResource("3_player")
+
+[node name="Sprite2D" type="Sprite2D" parent="Player" unique_id=1251000591]
+position = Vector2(0, -36)
+scale = Vector2(0.52, 0.52)
+texture = ExtResource("4_chibabao")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player" unique_id=1198876301]
+position = Vector2(0, 14)
+shape = SubResource("CircleShape2D_player")
+
+[node name="ItemPushArea" type="Area2D" parent="Player"]
+monitoring = true
+collision_mask = 8
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player/ItemPushArea"]
+position = Vector2(0, -28)
+shape = SubResource("CapsuleShape2D_item_push")
+
+[node name="ItemPushDebug" type="Node2D" parent="Player"]
+z_index = 19
+script = ExtResource("12_item_push_debug")
+
+[node name="AimIndicator" type="Node2D" parent="Player" unique_id=1259180857]
+position = Vector2(0, -34)
+z_index = 20
+script = ExtResource("6_indicator")
+
+[node name="AttackVisualizer" type="Node2D" parent="Player"]
+position = Vector2(0, -34)
+z_index = 20
+script = ExtResource("7_attack_visualizer")
+
+[node name="DashCooldownIndicator" type="Node2D" parent="Player"]
+visible = false
+position = Vector2(58, 36)
+z_index = 20
+script = ExtResource("9_dash_indicator")
+
+[node name="HealthLabel" type="Label" parent="Player"]
+offset_left = -42.0
+offset_top = -128.0
+offset_right = 42.0
+offset_bottom = -100.0
+horizontal_alignment = 1
+
+[node name="HeldItemSprite" type="Sprite2D" parent="Player"]
+position = Vector2(2, -8)
+scale = Vector2(0.56, 0.56)
+z_index = 21
+texture = ExtResource("10_test_meat")
+visible = false
+
+[node name="InteractionProgressBar" type="Node2D" parent="Player"]
+position = Vector2(0, -108)
+z_index = 22
+script = ExtResource("13_progress_bar")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=922357950]
+position = Vector2(2304, 1408)
+zoom = Vector2(0.84, 0.84)
+script = ExtResource("5_camera")
+target_path = NodePath("../Player")
+
+[node name="PrototypeLabel" type="Label" parent="." unique_id=1258973613]
+offset_left = 32.0
+offset_top = 24.0
+offset_right = 860.0
+offset_bottom = 96.0
+text = "WASD 移动 / SPACE 冲刺 / J 拿起放下 / K 互动 / L 自动攻击 / U 小技能 / I 大招 / TAB 切换订单"
+
+[node name="OrderHud" type="CanvasLayer" parent="."]
+script = ExtResource("16_order_hud")
+
+[node name="MarginContainer" type="MarginContainer" parent="OrderHud"]
+offset_left = 32.0
+offset_top = 0.0
+offset_right = 328.0
+offset_bottom = 238.0
+mouse_filter = 2
+
+[node name="OrderCard" type="Panel" parent="OrderHud/MarginContainer"]
+custom_minimum_size = Vector2(296, 238)
+offset_right = 296.0
+offset_bottom = 238.0
+mouse_filter = 2
+
+[node name="OrderIdLabel" type="Label" parent="OrderHud/MarginContainer/OrderCard"]
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 74.0
+offset_bottom = 28.0
+theme_override_font_sizes/font_size = 16
+
+[node name="CustomerNameLabel" type="Label" parent="OrderHud/MarginContainer/OrderCard"]
+offset_left = 78.0
+offset_top = 6.0
+offset_right = 286.0
+offset_bottom = 28.0
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 16
+text = "瀹汉"
+
+[node name="TargetSlotLabel" type="Label" parent="OrderHud/MarginContainer/OrderCard"]
+offset_left = 8.0
+offset_top = 30.0
+offset_right = 286.0
+offset_bottom = 52.0
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 15
+text = "1 鍙蜂笂鑿滃彛"
+
+[node name="ContentCenter" type="CenterContainer" parent="OrderHud/MarginContainer/OrderCard"]
+offset_left = 8.0
+offset_top = 56.0
+offset_right = 286.0
+offset_bottom = 194.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="OrderHud/MarginContainer/OrderCard/ContentCenter"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DishSection" type="VBoxContainer" parent="OrderHud/MarginContainer/OrderCard/ContentCenter/VBoxContainer"]
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="DishIconCenter" type="CenterContainer" parent="OrderHud/MarginContainer/OrderCard/ContentCenter/VBoxContainer/DishSection"]
+
+[node name="DishIcon" type="TextureRect" parent="OrderHud/MarginContainer/OrderCard/ContentCenter/VBoxContainer/DishSection/DishIconCenter"]
+custom_minimum_size = Vector2(58, 58)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DishNameLabel" type="Label" parent="OrderHud/MarginContainer/OrderCard/ContentCenter/VBoxContainer/DishSection"]
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 16
+text = "鏂欑悊"
+
+[node name="RecipeSection" type="VBoxContainer" parent="OrderHud/MarginContainer/OrderCard/ContentCenter/VBoxContainer"]
+alignment = 1
+theme_override_constants/separation = 4
+
+[node name="RecipeIconsRow" type="HBoxContainer" parent="OrderHud/MarginContainer/OrderCard/ContentCenter/VBoxContainer/RecipeSection"]
+alignment = 1
+theme_override_constants/separation = 12
+
+[node name="RecipeIconA" type="TextureRect" parent="OrderHud/MarginContainer/OrderCard/ContentCenter/VBoxContainer/RecipeSection/RecipeIconsRow"]
+custom_minimum_size = Vector2(42, 42)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RecipeIconB" type="TextureRect" parent="OrderHud/MarginContainer/OrderCard/ContentCenter/VBoxContainer/RecipeSection/RecipeIconsRow"]
+custom_minimum_size = Vector2(42, 42)
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PatienceBarFrame" type="ColorRect" parent="OrderHud/MarginContainer/OrderCard"]
+offset_left = 8.0
+offset_top = 210.0
+offset_right = 286.0
+offset_bottom = 224.0
+color = Color(0.14, 0.16, 0.2, 1)
+
+[node name="PatienceBarFill" type="ColorRect" parent="OrderHud/MarginContainer/OrderCard/PatienceBarFrame"]
+offset_right = 278.0
+offset_bottom = 14.0
+color = Color(0.48, 0.86, 0.42, 1)
+
+[node name="RunStatusHud" type="CanvasLayer" parent="."]
+script = ExtResource("20_run_status_hud")
+
+[node name="OrderManager" type="Node" parent="."]
+script = ExtResource("19_order_manager")
+
+[node name="StorageManager" type="Node" parent="."]
+script = ExtResource("21_storage_manager")
+
+[node name="BattleManager" type="Node" parent="."]
+script = ExtResource("23_battle_manager")
+
+[node name="ScarabMechanismController" type="Node" parent="."]
+script = ExtResource("39_scarab_mechanism")
+
+[node name="QuicksandMechanismController" type="Node" parent="."]
+script = ExtResource("40_quicksand_mechanism")
+
+[node name="WindSandMechanismController" type="Node" parent="."]
+script = ExtResource("41_wind_sand_mechanism")
+
+[node name="LevelFlowController" type="Node" parent="."]
+script = ExtResource("18_level_flow_controller")
+
+[node name="LevelRefs" type="Node" parent="."]
+script = ExtResource("28_level_refs")
+
+
+
+[node name="PlateSink" type="StaticBody2D" parent="."]
+position = Vector2(2816, 1472)
+script = ExtResource("42_sink")
+
+[node name="TrashBin" type="StaticBody2D" parent="."]
+position = Vector2(3008, 1472)
+script = ExtResource("43_trash_bin")
+
+[node name="PrepTableA" parent="." instance=ExtResource("11_test_table")]
+position = Vector2(2368, 1088)
+scale = Vector2(0.21, 0.21)
+
+[node name="PrepTableB" parent="." instance=ExtResource("11_test_table")]
+position = Vector2(2880, 832)
+scale = Vector2(0.21, 0.21)
+
+[node name="PrepTableC" parent="." instance=ExtResource("11_test_table")]
+position = Vector2(3136, 1088)
+scale = Vector2(0.21, 0.21)
+
+[node name="PrepTableD" parent="." instance=ExtResource("11_test_table")]
+position = Vector2(3136, 1344)
+scale = Vector2(0.21, 0.21)

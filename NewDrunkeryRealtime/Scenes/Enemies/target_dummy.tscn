@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Enemies/TargetDummy.gd" id="1_dummy"]
+[ext_resource type="Texture2D" path="res://ArtResource/Enemy/target_dummy.png" id="2_texture"]
+
+[node name="TargetDummy" type="Node2D"]
+script = ExtResource("1_dummy")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_texture")
+
+[node name="HealthLabel" type="Label" parent="."]
+offset_left = -42.0
+offset_top = -86.0
+offset_right = 42.0
+offset_bottom = -58.0
+horizontal_alignment = 1

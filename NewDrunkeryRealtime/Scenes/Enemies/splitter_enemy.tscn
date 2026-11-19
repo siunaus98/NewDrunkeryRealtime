@@ -1,0 +1,45 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Enemies/DashEnemy.gd" id="1_enemy"]
+[ext_resource type="Texture2D" path="res://ArtResource/Generated/Enemy/thorn_splitter_enemy.svg" id="2_texture"]
+[ext_resource type="Script" path="res://Scripts/Enemies/DashAttackTelegraph.gd" id="3_telegraph"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
+radius = 28.0
+
+[node name="SplitterEnemy" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 4
+script = ExtResource("1_enemy")
+max_health = 240
+move_speed = 123.2
+hit_radius = 36.0
+dash_trigger_distance = 310.0
+dash_cooldown = 1.55
+dash_windup_duration = 0.42
+dash_duration = 0.24
+dash_recovery_duration = 0.34
+dash_speed = 720.0
+dash_damage = 10
+dash_hit_radius = 40.0
+dash_length = 310.0
+telegraph_half_width = 36.0
+
+[node name="DashTelegraph" type="Node2D" parent="."]
+position = Vector2(0, -4)
+visible = false
+script = ExtResource("3_telegraph")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.92, 0.92)
+texture = ExtResource("2_texture")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_enemy")
+
+[node name="HealthLabel" type="Label" parent="."]
+offset_left = -42.0
+offset_top = -72.0
+offset_right = 42.0
+offset_bottom = -44.0
+horizontal_alignment = 1

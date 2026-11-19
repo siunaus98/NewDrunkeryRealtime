@@ -1,0 +1,43 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Enemies/RangedEnemy.gd" id="1_enemy"]
+[ext_resource type="Texture2D" path="res://ArtResource/Generated/Enemy/sand_scarab_enemy.svg" id="2_texture"]
+[ext_resource type="Script" path="res://Scripts/Enemies/LinearWarningTelegraph.gd" id="3_telegraph"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_enemy"]
+radius = 24.0
+
+[node name="SniperEnemy" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 4
+script = ExtResource("1_enemy")
+max_health = 280
+move_speed = 72.0
+shoot_trigger_distance = 460.0
+preferred_min_distance = 250.0
+preferred_max_distance = 390.0
+shoot_cooldown = 3.0
+windup_duration = 1.18
+projectile_speed = 512.0
+projectile_damage = 20
+projectile_range = 560.0
+telegraph_half_width = 22.0
+
+[node name="LinearWarningTelegraph" type="Node2D" parent="."]
+position = Vector2(0, -6)
+visible = false
+script = ExtResource("3_telegraph")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.78, 0.78)
+texture = ExtResource("2_texture")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_enemy")
+
+[node name="HealthLabel" type="Label" parent="."]
+offset_left = -42.0
+offset_top = -72.0
+offset_right = 42.0
+offset_bottom = -44.0
+horizontal_alignment = 1

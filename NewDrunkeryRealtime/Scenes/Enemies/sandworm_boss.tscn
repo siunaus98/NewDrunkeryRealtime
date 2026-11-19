@@ -1,0 +1,40 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Enemies/MapMechanismBoss.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://ArtResource/Generated/Enemy/sandworm_boss.svg" id="2_texture"]
+[ext_resource type="Script" path="res://Scripts/Enemies/GroundWarningCircle.gd" id="3_warning"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_boss"]
+radius = 92.0
+
+[node name="SandwormBoss" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 4
+script = ExtResource("1_script")
+boss_kind = &"quicksand"
+max_health = 24000
+hit_radius = 160.0
+hit_center_offset = Vector2(7, 2)
+hit_center_follows_sprite = true
+contact_damage = 10
+contact_damage_radius = 140.0
+move_speed = 64.0
+drop_count = 5
+
+[node name="GroundWarningCircle" type="Node2D" parent="."]
+visible = false
+script = ExtResource("3_warning")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(1.55, 1.55)
+texture = ExtResource("2_texture")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_boss")
+
+[node name="HealthLabel" type="Label" parent="."]
+offset_left = -72.0
+offset_top = -142.0
+offset_right = 72.0
+offset_bottom = -112.0
+horizontal_alignment = 1
