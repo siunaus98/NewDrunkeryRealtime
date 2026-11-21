@@ -399,7 +399,7 @@ func get_hurt_regions() -> Array[Dictionary]:
 	return geometry.regions(&"hurt")
 
 func _unhandled_key_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F8:
+	if OS.get_cmdline_user_args().has("--boss-hitboxes") and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F8:
 		geometry.toggle_debug()
 
 func set_movement_bounds(bounds: Rect2) -> void:

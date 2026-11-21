@@ -9,7 +9,7 @@ var item_push_collision_shape: CollisionShape2D
 
 var movement_bounds: Rect2 = Rect2(Vector2.ZERO, Vector2(1792, 1152))
 var edge_padding: Vector2 = Vector2(24, 24)
-var show_item_push_debug: bool = true
+var show_item_push_debug: bool = false
 var item_push_margin: float = 8.0
 var item_push_acceleration: float = 5400.0
 var item_push_min_speed: float = 24.0

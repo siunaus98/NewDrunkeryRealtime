@@ -56,6 +56,9 @@ func _run_sample() -> void:
 	controller.set_process(false)
 	controller.configure_for_level({"map_mechanism_ids": [Defs.SCARAB], "boss_enhanced_map_mechanism_id": Defs.SCARAB})
 	controller.start_business()
+	# Five actors can each carry five portions. Keep the route/performance
+	# fixture independent of the normal run's small starting pantry.
+	controller.storage_manager.fill_test_stock(30)
 	manager.configure_for_order_group({"boss_enhanced_map_mechanism_id": Defs.SCARAB})
 	manager.spawn_scheduled_boss()
 	var boss: Node = get_first_node_in_group("scorpion_bosses")

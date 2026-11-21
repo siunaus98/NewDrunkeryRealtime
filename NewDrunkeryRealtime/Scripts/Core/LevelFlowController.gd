@@ -31,8 +31,8 @@ const MONITOR_PLAYTEST_ARGUMENT: String = "--test-monitor"
 const FAST_BUSINESS_TEST: bool = false
 const FAST_BUSINESS_PREPARE_DURATION: float = 2.0
 const FAST_BUSINESS_SERVICE_DURATION: float = 30.0
-const FIRST_DAY_BOSS_DISABLED_PLAYTEST: bool = true
-const PATIENCE_SPEED_PLAYTEST: float = 2.0
+const FIRST_DAY_BOSS_DISABLED_PLAYTEST: bool = false
+const PATIENCE_SPEED_PLAYTEST: float = 1.0
 const SKILL_UPGRADE_PLAYTEST_XP: int = 1000
 const SKILL_UPGRADE_PLAYTEST_TAKE_DURATION: float = 30.0
 
@@ -44,7 +44,7 @@ const SKILL_UPGRADE_PLAYTEST_TAKE_DURATION: float = 30.0
 @export var danger_duration: float = 18.0
 @export var wave_break_duration_default: float = 4.0
 @export var blessing_select_duration: float = 30.0
-@export var starting_gold: int = 2000
+@export var starting_gold: int = 12
 @export var night_starting_stock_per_item: int = 5
 @export var magic_max: int = 8
 @export var magic_regen_interval: float = 10.8
@@ -975,7 +975,7 @@ func _open_menu_dish_overlay(is_mandatory_update: bool = false, title_text: Stri
 			offer_header_text
 		)
 		menu_dish_select_controller.set_refresh_status(progression_state.menu_refreshes, is_event, TestItemDefs.get_item_display_name(progression_state.event_menu_target) if is_event else "")
-		overlay_controller.debug_label.visible = not is_event
+		overlay_controller.debug_label.visible = not is_event and OS.get_cmdline_user_args().has("--debug-ui")
 		if is_event:
 			overlay_controller.hide_toast()
 	if overlay_controller != null and overlay_controller.has_method("set_debug_text"):

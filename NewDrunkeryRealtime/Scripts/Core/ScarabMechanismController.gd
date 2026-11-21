@@ -50,6 +50,8 @@ var navigation_retry_times: Dictionary = {}
 var escape_search_retry_times: Dictionary = {}
 var navigation_clock: float = 0.0
 var navigation_obstacle_signature: Dictionary = {}
+var navigation_probe_shape := CircleShape2D.new()
+var navigation_probe := PhysicsShapeQueryParameters2D.new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -574,7 +576,11 @@ func _build_route_to_position(scarab: Node2D, destination: Vector2, exclude: Arr
 	else:
 		cell_path = _get_live_endpoint_path(grid, grid_origin, cell_size, start_cell, destination_cell)
 	if cell_path.is_empty() and allow_live_grid_fallback and _is_navigation_point_walkable(destination, scarab, null, exclude):
-		cell_path = _build_live_grid_path(bounds, grid_origin, cell_size, grid_size, origin, destination, exclude)
+		# A missing route may be a stale obstacle snapshot. Refresh in slices;
+		# rebuilding thousands of cells per cabinet candidate stalls the game.
+		var cache: Dictionary = navigation_cache.caches[bounds]
+		cache.updated = -10.0
+		cache.urgent = true
 	if cell_path.is_empty():
 		return []
 	var route: Array[Vector2] = []
@@ -584,21 +590,6 @@ func _build_route_to_position(scarab: Node2D, destination: Vector2, exclude: Arr
 	if route.is_empty() or route.back().distance_to(destination) > 1.0:
 		route.append(destination)
 	return route
-
-func _build_live_grid_path(bounds: Rect2, grid_origin: Vector2, cell_size: float, grid_size: Vector2i, origin: Vector2, destination: Vector2, exclude: Array) -> Array[Vector2i]:
-	var live_grid := AStarGrid2D.new()
-	live_grid.region = Rect2i(Vector2i.ZERO, grid_size)
-	live_grid.cell_size = Vector2.ONE * cell_size
-	live_grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_NEVER
-	live_grid.update()
-	for y in range(grid_size.y):
-		for x in range(grid_size.x):
-			var cell := Vector2i(x, y)
-			var point := grid_origin + (Vector2(cell) + Vector2(0.5, 0.5)) * cell_size
-			live_grid.set_point_solid(cell, not _is_navigation_point_walkable(point, null, null, exclude))
-	var start := _get_navigation_cell(grid_origin, cell_size, grid_size, origin)
-	var end := _get_navigation_cell(grid_origin, cell_size, grid_size, destination)
-	return live_grid.get_id_path(start, end, false)
 
 func _get_live_endpoint_path(grid: AStarGrid2D, grid_origin: Vector2, cell_size: float, start_cell: Vector2i, destination_cell: Vector2i) -> Array[Vector2i]:
 	var patched: Array[Vector2i] = []
@@ -675,14 +666,16 @@ func _is_navigation_point_walkable(point: Vector2, scarab: Node2D, target: Node2
 	var world_2d: World2D = runtime_root.get_world_2d() if runtime_root is CanvasItem else get_viewport().world_2d
 	if world_2d == null:
 		return true
-	var shape := CircleShape2D.new()
-	shape.radius = maxf(navigation_clearance, 1.0)
-	var query := PhysicsShapeQueryParameters2D.new()
-	query.shape = shape
-	query.transform = Transform2D(0.0, point)
-	query.collision_mask = 4 | 8 | 16
-	query.exclude = exclude
-	return world_2d.direct_space_state.intersect_shape(query, 1).is_empty()
+	# Thousands of snapshot probes share one shape/query instead of creating
+	# and destroying physics-server resources for every grid cell.
+	if not is_equal_approx(navigation_probe_shape.radius, maxf(navigation_clearance, 1.0)):
+		navigation_probe_shape.radius = maxf(navigation_clearance, 1.0)
+	if navigation_probe.shape != navigation_probe_shape:
+		navigation_probe.shape = navigation_probe_shape
+	navigation_probe.transform = Transform2D(0.0, point)
+	navigation_probe.collision_mask = 4 | 8 | 16
+	navigation_probe.exclude = exclude
+	return world_2d.direct_space_state.intersect_shape(navigation_probe, 1).is_empty()
 
 func _segment_blocked(from_point: Vector2, to_point: Vector2, exclude: Array) -> bool:
 	var world_2d: World2D = runtime_root.get_world_2d() if runtime_root is CanvasItem else get_viewport().world_2d

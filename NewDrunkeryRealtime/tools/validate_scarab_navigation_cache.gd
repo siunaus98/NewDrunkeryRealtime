@@ -14,7 +14,7 @@ func _walkable(point: Vector2, _actor: Node2D) -> bool:
 	probes += 1
 	# Force a slice boundary independently of machine speed.
 	if slow_probe:
-		OS.delay_usec(2000)
+		OS.delay_usec(NavigationCache.FIRST_BUILD_BUDGET_USEC + 500)
 	return not blocked or int(point.x / 64.0) != 1
 
 func _published(_bounds: Rect2, _grid: AStarGrid2D, _cell_size: float, _size: Vector2i) -> void:

@@ -4,7 +4,7 @@ const FIRST_BATCH: Array[StringName] = [&"furnace", &"engraver", &"porcelain", &
 const SECOND_BATCH: Array[StringName] = [&"merchant", &"devil", &"sand_spirit", &"prankster"]
 # Temporary playtest: 1 = first batch, 2 = second batch, 3 = all eight NPC
 # events at once, 0 = normal random event flow.
-const PLAYTEST_BATCH: int = 3
+const PLAYTEST_BATCH: int = 0
 const INITIAL_NIGHT_PLAYTEST: bool = PLAYTEST_BATCH == 1
 const SECOND_NIGHT_PLAYTEST: bool = PLAYTEST_BATCH == 2
 const ALL_EVENTS_PLAYTEST: bool = PLAYTEST_BATCH == 3

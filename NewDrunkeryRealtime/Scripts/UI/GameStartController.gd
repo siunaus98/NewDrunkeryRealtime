@@ -35,7 +35,7 @@ const CHARACTER_OPTIONS := {
 }
 
 const BIG_SKILL_OPTIONS := [
-	{"id": BigSkillDefs.BASE, "name": "稳住这锅", "summary": "原版测试"},
+	{"id": BigSkillDefs.BASE, "name": "稳住这锅", "summary": "基础技能"},
 	{"id": BigSkillDefs.EXTEND, "name": "忙中有序", "summary": "完成工作与上菜可以续时"},
 	{"id": BigSkillDefs.FOCUS, "name": "专心掌勺", "summary": "持续时间更长并免疫控制"},
 	{"id": BigSkillDefs.AURA, "name": "灶火共鸣", "summary": "范围内设施获得效率增益"},
@@ -759,15 +759,10 @@ func _start_run() -> void:
 	get_tree().set_meta("run_setup", {
 		"character_id": selected_character_id,
 		# Skill variants are earned at the goddess statue after day 2/day 4.
-		# The start screen keeps the old selectors only as a visual test harness;
-		# normal runs always begin with the base skills.
+		# Runs begin with the base skills; variants unlock during progression.
 		"small_skill_variant": &"rush_order",
 		"big_skill_variant": &"steady_pot",
-		# The current start screen is a skill-testing harness. Begin each
-		# launched test run with a full ultimate gauge so variants can be tried
-		# immediately; headless gameplay and later run flows keep their normal
-		# zero-energy initialization unless they opt in to this flag.
-		"start_ultimate_full": true,
+		"start_ultimate_full": false,
 		"innate_passive_id": &"home_apron"
 	})
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)

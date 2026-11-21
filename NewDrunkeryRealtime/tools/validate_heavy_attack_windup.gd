@@ -26,6 +26,9 @@ func _run() -> void:
 	var player: Node2D = main.get_node("Player")
 	player.global_position = Vector2(10000, 10000)
 	var combat: RefCounted = player.combat_controller
+	# Test base windup damage independently of event-playtest starting gifts.
+	var no_blessings: Array[StringName] = []
+	combat.blessing_controller.set_owned_blessings(no_blessings)
 	var shape: Dictionary = {"direction": Vector2.RIGHT, "inner_radius": 0.0, "outer_radius": 200.0, "angle_degrees": 180.0}
 	var any_zone: Callable = func(_point: Vector2) -> bool: return true
 	for scene_name: String in ["pig_enemy", "ranged_enemy", "slam_enemy", "bullet_hell_enemy"]:

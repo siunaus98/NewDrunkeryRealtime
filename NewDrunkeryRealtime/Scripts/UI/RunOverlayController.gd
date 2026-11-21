@@ -192,6 +192,7 @@ func build_overlay(
 	shop_item_grid_center.add_child(shop_item_list)
 
 	debug_label = Label.new()
+	debug_label.visible = OS.get_cmdline_user_args().has("--debug-ui")
 	debug_label.position = Vector2(24.0, 24.0)
 	debug_label.size = Vector2(620.0, 240.0)
 	debug_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

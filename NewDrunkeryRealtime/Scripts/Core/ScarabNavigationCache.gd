@@ -3,6 +3,8 @@ extends RefCounted
 ## Owns all shared snapshots and gate searches. Scene queries are used only
 ## during tick, without retaining the host or duplicating its gameplay clock.
 const BUILD_BUDGET_USEC: int = 1500
+const FIRST_BUILD_BUDGET_USEC: int = 8000
+const REFRESH_BUILD_BUDGET_USEC: int = 5000
 const REFRESH_INTERVAL: float = 1.0
 
 var caches: Dictionary = {}
@@ -18,10 +20,11 @@ func request_refresh() -> void:
 	for bounds in caches:
 		var cache: Dictionary = caches[bounds]
 		cache.updated = -10.0
+		cache.urgent = true
 
 func get_grid(bounds: Rect2, cell_size: float, grid_size: Vector2i) -> AStarGrid2D:
 	if not caches.has(bounds):
-		caches[bounds] = {"grid": null, "building": null, "cursor": 0, "size": grid_size, "cell_size": cell_size, "updated": -10.0, "gate_trees": {}}
+		caches[bounds] = {"grid": null, "building": null, "cursor": 0, "size": grid_size, "cell_size": cell_size, "updated": -10.0, "gate_trees": {}, "urgent": true}
 	return caches[bounds].grid as AStarGrid2D
 
 func get_gate_path(bounds: Rect2, start: Vector2i, gate: Vector2i) -> Array[Vector2i]:
@@ -64,13 +67,25 @@ func tick(navigation_clock: float, is_walkable: Callable, snapshot_ready: Callab
 	# Build in small slices instead of scanning thousands of cells in one frame.
 	var deadline := Time.get_ticks_usec() + BUILD_BUDGET_USEC
 	var bounds_list: Array = caches.keys()
-	var first_index := next_cache_index
+	var work: Array[Rect2] = []
+	var urgent := false
+	var first_routes := false
 	for offset in range(bounds_list.size()):
-		var index := (first_index + offset) % bounds_list.size()
-		var bounds: Rect2 = bounds_list[index]
+		var bounds: Rect2 = bounds_list[(next_cache_index + offset) % bounds_list.size()]
+		work.append(bounds)
+		urgent = urgent or caches[bounds].grid == null or bool(caches[bounds].urgent)
+		first_routes = first_routes or caches[bounds].grid == null
+		for search: Dictionary in caches[bounds].gate_trees.values():
+			urgent = urgent or not bool(search.complete)
+			first_routes = first_routes or not bool(search.complete)
+	# New routes and moved facilities need a prompt, bounded publication.
+	# Retain round-robin fairness between the kitchen and incoming corridor.
+	if urgent:
+		deadline = Time.get_ticks_usec() + (FIRST_BUILD_BUDGET_USEC if first_routes else REFRESH_BUILD_BUDGET_USEC)
+	for bounds: Rect2 in work:
 		# Resume with the next region when this one exhausts the shared budget.
 		# Kitchen refreshes must not starve the first cross-region snapshot.
-		next_cache_index = (index + 1) % bounds_list.size()
+		next_cache_index = (bounds_list.find(bounds) + 1) % bounds_list.size()
 		var cache: Dictionary = caches[bounds]
 		_tick_gate_searches(cache, deadline)
 		if Time.get_ticks_usec() >= deadline:
@@ -95,6 +110,7 @@ func tick(navigation_clock: float, is_walkable: Callable, snapshot_ready: Callab
 			cache.grid = cache.building
 			cache.building = null
 			cache.updated = navigation_clock
+			cache.urgent = false
 			# Rebuild gate routes against the new obstacle snapshot, not stale
 			# walls or forage points. Actors keep moving on their current routes.
 			cache.gate_trees.clear()

@@ -137,10 +137,15 @@ func run() -> void:
 	boss.movement_bounds = map.get_region_bounds(&"top")
 	boss.global_position = boss.movement_bounds.get_center()
 	var actor: CharacterBody2D = main.get_node("Player")
+	var no_blessings: Array[StringName] = []
+	actor.combat_controller.blessing_controller.set_owned_blessings(no_blessings)
 	actor.clear_held_item()
 	await physics_frame
 	check_body_alignment(boss, actor)
 	check_attack_turning(boss, actor)
+	# Prior combat checks intentionally deal real damage. Feeding starts from
+	# a fresh full-health fixture; below half health requires two offering spots.
+	boss.current_health = boss.max_health
 	var head: Node2D = boss.tongue
 	check(head.begin() and head.spots.size() == 1 and head.remaining == 30, "Preparation creates one reachable offering space for thirty seconds without existing food")
 	if head.spots.is_empty():

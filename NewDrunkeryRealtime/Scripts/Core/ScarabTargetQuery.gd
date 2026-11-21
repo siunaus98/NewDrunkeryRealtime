@@ -56,6 +56,15 @@ static func find_nearest(scarab: Node2D, targets: Array[Dictionary], route_to_po
 			positions = _ground_approach_positions(scarab, node)
 		var occupied: Array = entry.get("occupied_positions", [])
 		for position in positions:
+			# Straight-line distance is a lower bound on route cost. Skip only
+			# candidates that cannot beat the already reachable best choice.
+			var lower_bound := scarab.global_position.distance_to(position)
+			if cabinet:
+				lower_bound = maxf(lower_bound - 32.0, 0.0)
+			else:
+				lower_bound += position.distance_to(node.global_position) - GROUND_PREFERENCE_DISTANCE
+			if lower_bound >= nearest_distance:
+				continue
 			if cabinet and not can_reach_cabinet.call(scarab, node, position):
 				continue
 			var unavailable := false
