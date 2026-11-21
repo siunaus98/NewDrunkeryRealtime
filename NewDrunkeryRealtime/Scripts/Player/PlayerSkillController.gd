@@ -38,6 +38,8 @@ func add_energy(amount: float) -> void:
 	ultimate_energy = clampf(ultimate_energy + maxf(amount, 0.0), 0.0, Energy.CAPACITY)
 
 func try_activate_small() -> bool:
+	if player.is_downed():
+		return false
 	return small.try_activate(cooldown_haste_multiplier)
 
 func set_small_variant(id: StringName) -> void:

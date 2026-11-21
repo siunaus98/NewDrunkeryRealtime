@@ -47,7 +47,8 @@ func run() -> void:
 		if flow.order_groups.is_empty():
 			continue
 		var group: Dictionary = flow._build_order_group_for_current_menu(flow.order_groups[0])
-		check(float(group.get("prepare_duration", flow.prepare_phase_duration)) == 60 and float(group.get("service_duration", flow.service_phase_duration)) == 260, "Day %d retains normal preparation and service times" % (day + 1))
+		var expected_service: float = 260 if StringName(group.get("boss_enhanced_map_mechanism_id", &"")) != &"" else 180
+		check(float(group.get("prepare_duration", flow.prepare_phase_duration)) == 60 and float(group.get("service_duration", flow.service_phase_duration)) == expected_service, "Day %d uses shorter normal service and unchanged boss service" % (day + 1))
 		if day == 0:
 			check(group.boss_enhanced_map_mechanism_id == &"", "Normal day one does not force a boss")
 		if day == 3:

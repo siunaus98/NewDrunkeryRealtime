@@ -66,6 +66,10 @@ var hit_feedback_tween: Tween
 var base_sprite_position: Vector2 = Vector2.ZERO
 var base_sprite_scale: Vector2 = Vector2.ONE
 var blessing_controller: RefCounted
+const DOWNED_DURATION: float = 10.0
+var downed_remaining: float = 0.0
+var revive_immunity_remaining: float = 0.0
+var downed_label: Label
 
 func setup(
 	new_player: CharacterBody2D,
@@ -112,6 +116,7 @@ func setup(
 	_update_health_label()
 
 func tick_cooldowns(delta: float, input_direction: Vector2 = Vector2.ZERO) -> void:
+	revive_immunity_remaining = maxf(revive_immunity_remaining - maxf(delta, 0.0), 0.0)
 	attack_cooldown_remaining = maxf(attack_cooldown_remaining - delta, 0.0)
 	var dash_rate: float = float(blessing_controller.get_dash_cooldown_rate_multiplier()) if blessing_controller != null else 1.0
 	dash_cooldown_remaining = maxf(dash_cooldown_remaining - delta * dash_rate, 0.0)
@@ -140,6 +145,8 @@ func tick_cooldowns(delta: float, input_direction: Vector2 = Vector2.ZERO) -> vo
 					cancel_attack_charge(false)
 
 func begin_attack_hold(aim_direction: Vector2 = Vector2.RIGHT, input_direction: Vector2 = Vector2.ZERO) -> bool:
+	if is_downed():
+		return false
 	if attack_cooldown_remaining > 0.0:
 		return false
 	if dash_time_remaining > 0.0:
@@ -176,6 +183,8 @@ func cancel_input_actions() -> void:
 	attack_input_grace_remaining = 0.0
 
 func try_attack(aim_direction: Vector2, can_damage_target_across_zones: Callable, charge_ratio: float = 0.0) -> bool:
+	if is_downed():
+		return false
 	if attack_cooldown_remaining > 0.0:
 		return false
 	attack_cooldown_remaining = attack_cooldown
@@ -186,6 +195,8 @@ func try_attack(aim_direction: Vector2, can_damage_target_across_zones: Callable
 	return true
 
 func try_dash(input_direction: Vector2, aim_direction: Vector2) -> bool:
+	if is_downed():
+		return false
 	if dash_cooldown_remaining > 0.0 or dash_time_remaining > 0.0:
 		return false
 
@@ -202,6 +213,8 @@ func try_dash(input_direction: Vector2, aim_direction: Vector2) -> bool:
 	return true
 
 func take_damage(damage: int, hit_direction: Vector2 = Vector2.ZERO, damage_type: StringName = &"special") -> bool:
+	if is_downed() or revive_immunity_remaining > 0.0:
+		return false
 	if player.has_meta("facility_vehicle"):
 		var vehicle: Node = player.get_meta("facility_vehicle")
 		if is_instance_valid(vehicle):
@@ -230,7 +243,54 @@ func take_damage(damage: int, hit_direction: Vector2 = Vector2.ZERO, damage_type
 		AudioCue.at(player, &"hurt", -3.0)
 	_update_health_label()
 	_play_hit_feedback(hit_direction, damage_type == &"quicksand")
+	if current_health <= 0:
+		_begin_downed()
 	return true
+
+func is_downed() -> bool:
+	return downed_remaining > 0.0
+
+func _begin_downed() -> void:
+	current_health = 0
+	downed_remaining = DOWNED_DURATION
+	cancel_input_actions()
+	if hit_feedback_tween:
+		hit_feedback_tween.kill()
+		hit_feedback_tween = null
+	if sprite != null:
+		sprite.position = base_sprite_position
+		sprite.scale = base_sprite_scale
+		sprite.modulate = Color("a0a0b3")
+	if downed_label == null:
+		downed_label = Label.new()
+		downed_label.name = "DownedCountdown"
+		downed_label.position = Vector2(-150, -195)
+		downed_label.size.x = 300
+		downed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		downed_label.add_theme_font_size_override("font_size", 26)
+		downed_label.add_theme_color_override("font_outline_color", Color("30292c"))
+		downed_label.add_theme_constant_override("outline_size", 6)
+		player.add_child(downed_label)
+	_update_downed_label()
+	player.on_downed()
+
+func tick_downed(delta: float) -> void:
+	if not is_downed():
+		return
+	downed_remaining = maxf(downed_remaining - maxf(delta, 0.0), 0.0)
+	_update_downed_label()
+	if not is_downed():
+		current_health = 1
+		revive_immunity_remaining = 1.0
+		if sprite != null:
+			sprite.modulate = Color.WHITE
+		player.suppress_action_inputs_until_release()
+		_update_health_label()
+
+func _update_downed_label() -> void:
+	if downed_label != null:
+		downed_label.visible = is_downed()
+		downed_label.text = "晕眩 · %d 秒后苏醒" % ceili(downed_remaining)
 
 func reset_runtime_stats() -> void:
 	move_speed_multiplier = 1.0
@@ -238,6 +298,9 @@ func reset_runtime_stats() -> void:
 	dash_cooldown_multiplier = 1.0
 
 func reset_temporary_state() -> void:
+	downed_remaining = 0.0
+	revive_immunity_remaining = 0.0
+	_update_downed_label()
 	current_health = get_current_max_health()
 	attack_cooldown_remaining = 0.0
 	_reset_attack_hold()
@@ -263,7 +326,8 @@ func add_shop_max_health_bonus(health_bonus: int) -> void:
 	if health_bonus <= 0:
 		return
 	bonus_max_health += health_bonus
-	current_health += health_bonus
+	if not is_downed():
+		current_health += health_bonus
 	_update_health_label()
 
 func set_event_max_health_penalty(penalty: int) -> void:
@@ -281,7 +345,8 @@ func apply_forged_attribute(option: Dictionary) -> void:
 		&"max_health":
 			bonus_max_health += int(round(fixed))
 			total_health_multiplier += float(option.get("total_health", 0.0))
-			current_health += int(round(fixed))
+			if not is_downed():
+				current_health += int(round(fixed))
 		&"armor":
 			bonus_armor += fixed
 			total_damage_reduction = 1.0 - (1.0 - total_damage_reduction) * (1.0 - float(option.get("final_damage_reduction", 0.0)))
@@ -326,6 +391,8 @@ func get_health_ratio() -> float:
 	return float(current_health) / float(maxi(get_current_max_health(), 1))
 
 func heal(amount: int) -> void:
+	if is_downed():
+		return
 	current_health = mini(current_health + maxi(amount, 0), get_current_max_health())
 	_update_health_label()
 

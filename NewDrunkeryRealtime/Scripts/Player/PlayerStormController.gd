@@ -65,7 +65,7 @@ func tick(delta: float) -> bool:
 	if collision != null or hit_boundary:
 		# Only this swept flight can cause a storm crash. A normal landing cannot.
 		distance_remaining = 0.0
-		if player.take_damage(impact_damage, direction, &"storm_crash"):
+		if player.take_damage(impact_damage, direction, &"storm_crash") and not player.is_downed():
 			stun_remaining = impact_stun
 		immunity_remaining = 0.65
 	elif distance_remaining <= 0.01:

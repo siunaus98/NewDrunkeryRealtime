@@ -259,6 +259,10 @@ func _clear_focus_input() -> void:
 
 func _process(delta: float) -> void:
 	input_gate.refresh()
+	if is_downed():
+		combat_controller.tick_downed(delta)
+		queue_redraw()
+		return
 	if push_controller != null:
 		push_controller.update_ignored_pushable_items(delta)
 	if combat_controller != null:
@@ -345,6 +349,11 @@ func suppress_action_inputs_until_release() -> void:
 		combat_controller.cancel_input_actions()
 
 func _physics_process(_delta: float) -> void:
+	if is_downed():
+		velocity = Vector2.ZERO
+		quicksand_pull_velocity = Vector2.ZERO
+		quicksand_spawn_motion = Vector2.ZERO
+		return
 	if has_meta("facility_vehicle") or preload("res://Scripts/Facilities/FacilityControlEffect.gd").rooted(self):
 		velocity = Vector2.ZERO
 		return
@@ -508,6 +517,25 @@ func _try_rotate_carried_facility() -> void:
 func take_damage(damage: int, hit_direction: Vector2 = Vector2.ZERO, damage_type: StringName = &"special") -> bool:
 	return combat_controller != null and combat_controller.take_damage(damage, hit_direction, damage_type)
 
+func is_downed() -> bool:
+	return combat_controller != null and combat_controller.is_downed()
+
+func on_downed() -> void:
+	velocity = Vector2.ZERO
+	movement_input_direction = Vector2.ZERO
+	clear_hostile_control()
+	wind_jump_remaining = 0.0
+	wind_jump_velocity = Vector2.ZERO
+	if held_item_sprite != null:
+		held_item_sprite.scale = wind_jump_base_held_scale
+	if interaction_controller != null:
+		var target: Node = interaction_controller.get_current_interaction_target()
+		if is_instance_valid(target) and target.has_method("cancel_interaction"):
+			target.cancel_interaction(self)
+		interaction_controller._set_current_interaction_target(null)
+		interaction_controller.update_interaction_progress_ui()
+	suppress_action_inputs_until_release()
+
 func apply_contact_push(push_direction: Vector2, push_distance: float) -> void:
 	if has_meta("facility_vehicle"):
 		return
@@ -529,6 +557,8 @@ func apply_storm_slow(source: Node, multiplier: float) -> void:
 	storm_controller.apply_slow(source, multiplier)
 
 func apply_conveyor_motion(motion: Vector2) -> void:
+	if is_downed():
+		return
 	if motion.length_squared() <= 0.000001:
 		return
 	global_position += motion
@@ -563,6 +593,8 @@ func _interrupt_processing_for_quicksand() -> void:
 		quicksand_processing_needs_release = true
 
 func apply_wind_sand_jump(motion: Vector2) -> bool:
+	if is_downed():
+		return false
 	if storm_controller.blocks_actions():
 		return false
 	if motion.length_squared() <= 0.000001:
@@ -766,10 +798,10 @@ func award_ultimate_energy(event: StringName) -> void:
 		skill_controller.add_energy(amount)
 
 func is_skill_gameplay_active() -> bool:
-	return not get_tree().paused and _is_daytime_facility_rearrange_active()
+	return not is_downed() and not get_tree().paused and _is_daytime_facility_rearrange_active()
 
 func is_control_immune() -> bool:
-	return skill_controller != null and skill_controller.has_method("is_control_immune") and skill_controller.is_control_immune()
+	return is_downed() or (skill_controller != null and skill_controller.has_method("is_control_immune") and skill_controller.is_control_immune())
 
 func clear_hostile_control() -> void:
 	var facility_effect: Node = get_node_or_null("FacilityControlEffect")

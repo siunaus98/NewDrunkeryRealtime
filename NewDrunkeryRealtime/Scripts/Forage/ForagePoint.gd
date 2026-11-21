@@ -78,6 +78,9 @@ func _process(delta: float) -> void:
 			if not Input.is_action_pressed("interact") or _should_cancel_active_state():
 				_cancel_search()
 		ForageState.SELECTING:
+			if _should_cancel_active_state():
+				_cancel_search()
+				return
 			selection_remaining = maxf(selection_remaining - delta, 0.0)
 			_check_selection_input()
 			if selection_remaining <= 0.0 and state == ForageState.SELECTING:
@@ -173,18 +176,17 @@ func _start_search(other_player: Node) -> void:
 	_set_state(ForageState.SEARCHING)
 
 func _cancel_search() -> void:
-	if remove_after_attempt:
-		_release_player_interaction_target()
-		active_player = null
-		search_progress = 0.0
-		_clear_options()
-		forage_finished.emit(self, false)
-		queue_free()
-		return
+	# Cancelling does not consume the point or free the region's spawn slot.
+	_release_player_interaction_target()
 	search_progress = 0.0
+	selection_remaining = 0.0
 	active_player = null
 	_clear_options()
 	_set_state(ForageState.IDLE)
+
+func cancel_interaction(other_player: Node) -> void:
+	if active_player == other_player and state in [ForageState.SEARCHING, ForageState.SELECTING]:
+		_cancel_search()
 
 func _start_selection() -> void:
 	AudioCue.at(self, &"ui_tab", -5.0)
@@ -385,6 +387,8 @@ func _shuffle_array(values: Array) -> void:
 
 func _should_cancel_active_state() -> bool:
 	if active_player == null or not is_instance_valid(active_player):
+		return true
+	if active_player.has_method("is_downed") and active_player.is_downed():
 		return true
 	if active_player.has_method("is_holding_item") and active_player.is_holding_item():
 		return true

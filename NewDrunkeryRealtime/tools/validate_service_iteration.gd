@@ -100,14 +100,14 @@ func run() -> void:
 	flow._enter_prepare_phase()
 	flow._process(60)
 	var previous_visit: int = flow.customer_visit
-	for tick in range(1041):
+	for tick in range(721):
 		manager.clear_orders()
 		flow._process(0.25)
 		check(flow.customer_visit - previous_visit <= 1, "A frame can admit at most one customer")
 		previous_visit = flow.customer_visit
 		if flow.run_context.state == Context.LevelState.LEVEL_SUCCESS:
 			break
-	check(flow.customer_visit >= 13 and flow.customer_visit <= 15 and flow.run_context.state == Context.LevelState.LEVEL_SUCCESS, "Whole-day arrivals follow mean frequency and close successfully: %d visits" % flow.customer_visit)
+	check(flow.customer_visit >= 9 and flow.customer_visit <= 11 and flow.run_context.state == Context.LevelState.LEVEL_SUCCESS, "Whole-day arrivals follow mean frequency and close successfully: %d visits" % flow.customer_visit)
 	paused = false
 	# Boss days close normal arrivals but retain the separate guest finale.
 	var boss_group := Groups.append_boss_special_orders(group, &"scarab")

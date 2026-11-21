@@ -37,9 +37,10 @@ const SKILL_UPGRADE_PLAYTEST_XP: int = 1000
 const SKILL_UPGRADE_PLAYTEST_TAKE_DURATION: float = 30.0
 
 ## Give the player a short planning window before the first customers arrive.
-## Normal days allow 60s preparation and 260s service; playtest overrides remain explicit.
+## Preparation is 60s; regular service is 180s and boss service is 260s.
 @export var prepare_phase_duration: float = 60.0
 @export var service_phase_duration: float = 260.0
+@export var regular_service_duration: float = 180.0
 @export var danger_threshold: int = 30
 @export var danger_duration: float = 18.0
 @export var wave_break_duration_default: float = 4.0
@@ -1538,6 +1539,8 @@ func _build_order_group_for_current_menu(group_data: Dictionary) -> Dictionary:
 		built_group.erase("boss_special_guest_id")
 	if built_group.get("boss_enhanced_map_mechanism_id", &"") != &"":
 		built_group = OrderGroupDefs.append_boss_special_orders(built_group, StringName(built_group["boss_enhanced_map_mechanism_id"]))
+	elif not FAST_BUSINESS_TEST and not event_multiday_test and progression_state.events.PLAYTEST_BATCH == 0:
+		built_group["service_duration"] = regular_service_duration
 	if scarab_mechanism_controller != null and scarab_mechanism_controller.has_method("configure_for_level"):
 		scarab_mechanism_controller.configure_for_level(built_group, progression_state)
 	if quicksand_mechanism_controller != null and quicksand_mechanism_controller.has_method("configure_for_level"):
