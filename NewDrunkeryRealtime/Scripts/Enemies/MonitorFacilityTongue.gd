@@ -60,7 +60,7 @@ func _resolve_branches() -> void:
 					actor.show_hint("搬运中的设施已附着口水 · 放下后可修理")
 
 func mouth() -> Vector2:
-	return boss.sprite.to_global(Vector2(66, -43))
+	return boss.sprite.to_global(Vector2(-96, -112))
 
 func tongue_color() -> Color:
 	return Color("6b9eb2")

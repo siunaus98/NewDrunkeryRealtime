@@ -84,7 +84,7 @@ func _physics_process(delta: float) -> void:
 			var collided := _move_in_arena(motion)
 			if not bait.is_empty() and Food.valid(bait) and _point_segment_distance(bait.position, previous, global_position) <= 120.0:
 				_eat_bait()
-			elif not contact_hit and _point_segment_distance(_player_point(), previous, global_position) <= hit_radius + 18.0:
+			elif not contact_hit and geometry.swept_contact(_player_point(), global_position - previous, _player_contact_radius()):
 				_damage_player(skill_damage, attack_direction)
 				contact_hit = true
 			if eating_remaining <= 0.0 and (state_remaining <= 0.0 or collided or global_position.distance_to(attack_target) <= 0.1):
@@ -122,16 +122,7 @@ func _find_bait() -> void:
 	)
 	# Reject bait behind placed obstacles instead of walking into them forever.
 	for candidate: Dictionary in options:
-		var shape := CircleShape2D.new()
-		shape.radius = 100.0
-		var query := PhysicsShapeQueryParameters2D.new()
-		query.shape = shape
-		query.transform = Transform2D(0, global_position)
-		query.motion = candidate.position - global_position
-		query.collision_mask = collision_mask
-		query.exclude = [get_rid()]
-		var fractions := get_world_2d().direct_space_state.cast_motion(query)
-		if fractions[0] >= 0.99:
+		if geometry.motion_clear(global_position, candidate.position - global_position):
 			bait = candidate
 			return
 	bait.clear()
@@ -214,7 +205,7 @@ func _approach_forward(target: Vector2, speed: float, delta: float) -> void:
 
 func is_rear_hit(attacker_position: Vector2) -> bool:
 	var offset := attacker_position - get_hit_position()
-	var body_forward := (sprite.to_global(Vector2.UP) - sprite.global_position).normalized()
+	var body_forward := (sprite.to_global(Vector2(-1, -1).normalized()) - sprite.global_position).normalized()
 	return not offset.is_zero_approx() and offset.normalized().dot(body_forward) < -0.4
 
 func receive_player_hit(damage: int, direction: Vector2, attacker: Node2D, _heavy: bool) -> void:
@@ -346,9 +337,10 @@ func get_boss_status_text() -> String:
 
 func _update_visuals() -> void:
 	super._update_visuals()
-	# The authored heads point upward. Rotate their art with the gameplay
+	# The oblique artwork points upper-left. Rotate with the gameplay
 	# facing, so the glowing rear patch always matches positional damage.
-	sprite.rotation += facing.angle() + PI / 2
+	sprite.rotation += facing.angle() + 3.0 * PI / 4.0
+	geometry.sync_ground()
 	if eating_remaining > 0.0:
 		sprite.scale = base_sprite_scale * Vector2(1.08, 0.88 + 0.03 * sin(eating_remaining * 9.0))
 	elif tongue != null and (tongue.blocks_boss() or facility_tongue.blocks_boss()):
@@ -368,7 +360,7 @@ func _update_visuals() -> void:
 		weakpoint_view.queue_redraw()
 
 func _draw_weakpoint() -> void:
-	var rear := Vector2(0, 125.0)
+	var rear := Vector2(88.0, 88.0)
 	weakpoint_view.draw_circle(rear, 27, Color("56382b"))
 	weakpoint_view.draw_circle(rear, 21, Color("f3cb72"))
 	weakpoint_view.draw_arc(rear, 30, 0, TAU, 24, Color("ffe9a8"), 4, true)

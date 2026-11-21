@@ -378,11 +378,10 @@ func _apply_attack_hit(attack_shape: Dictionary, can_damage_target_across_zones:
 			continue
 
 		var geometry := PlayerAttackTargetQuery.get_target_geometry(target, attack_origin)
-		var target_position: Vector2 = geometry.position
-		var target_radius: float = float(geometry.radius)
-		var distance: float = float(geometry.distance)
-		if not PlayerAttackTargetQuery.is_in_attack_geometry(geometry, effective_inner_radius, effective_outer_radius, aim_direction, half_attack_angle):
+		if not PlayerAttackTargetQuery.is_in_attack_geometry(geometry, effective_inner_radius, effective_outer_radius, aim_direction, half_attack_angle, can_damage_target_across_zones):
 			continue
+		var target_position: Vector2 = geometry.position
+		var distance: float = float(geometry.distance)
 		if not bool(can_damage_target_across_zones.call(target_position)):
 			continue
 
@@ -482,18 +481,18 @@ func _get_auto_aim_direction(fallback_direction: Vector2, can_damage_target_acro
 			continue
 
 		var geometry := PlayerAttackTargetQuery.get_target_geometry(target, attack_origin)
+		if not PlayerAttackTargetQuery.is_in_attack_geometry(geometry, attack_inner_radius, effective_outer_radius, reference_direction, half_auto_aim_angle, can_damage_target_across_zones):
+			continue
 		var target_position: Vector2 = geometry.position
 		var target_radius: float = float(geometry.radius)
 		var distance: float = float(geometry.distance)
 		var to_target: Vector2 = geometry.offset
-		if not PlayerAttackTargetQuery.is_in_attack_geometry(geometry, attack_inner_radius, effective_outer_radius, reference_direction, half_auto_aim_angle):
-			continue
 		if not bool(can_damage_target_across_zones.call(target_position)):
 			continue
 		var target_direction: Vector2 = to_target.normalized()
 		var angle_to_reference: float = abs(reference_direction.angle_to(target_direction))
 		var is_close_light_target: bool = is_light_attack and distance <= light_attack_close_auto_aim_radius + target_radius
-		if not is_close_light_target and angle_to_reference > half_auto_aim_angle:
+		if not geometry.has("regions") and not is_close_light_target and angle_to_reference > half_auto_aim_angle:
 			continue
 		var angle_score: float = 0.0 if is_close_light_target else angle_to_reference * 80.0
 		var score: float = distance + angle_score

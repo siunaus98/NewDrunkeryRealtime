@@ -128,6 +128,7 @@ var source_hint_key_was_down: bool = false
 
 func _ready() -> void:
 	add_to_group("player")
+	collision_mask |= 32  # Inset BOSS ground bodies.
 	motion_mode = CharacterBody2D.MOTION_MODE_FLOATING
 	safe_margin = collision_safe_margin
 	storm_controller = PlayerStormController.new()
@@ -1038,7 +1039,7 @@ func _is_player_position_safe_after_facility_place(candidate_position: Vector2) 
 	var query := PhysicsShapeQueryParameters2D.new()
 	query.shape = body_shape
 	query.transform = Transform2D(0.0, body_data.get("center", candidate_position))
-	query.collision_mask = 4 | 8 | 16
+	query.collision_mask = 4 | 8 | 16 | 32
 	query.exclude = [get_rid()]
 	var hits: Array[Dictionary] = get_world_2d().direct_space_state.intersect_shape(query, 16)
 	return hits.is_empty()

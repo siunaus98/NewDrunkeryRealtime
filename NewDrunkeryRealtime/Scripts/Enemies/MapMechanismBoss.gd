@@ -20,6 +20,8 @@ enum Attack { NEEDLES, TAIL, SLAM, RUSH, PULSE, STING, SWEEP, LEAP, SUMMON, GUST
 @export var move_speed: float = 96.0
 @export var combat_spacing: float = 190.0
 @export var hit_radius: float = 92.0
+@export var rush_half_width: float = 180.0
+@export var arena_padding_radius: float = 160.0
 @export var hit_center_offset: Vector2 = Vector2.ZERO
 @export var hit_center_follows_sprite: bool = false
 @export var contact_damage: int = 0
@@ -79,6 +81,7 @@ var base_sprite_scale: Vector2
 var rush_previous_position: Vector2
 var skill_effect_layer: Node2D
 var vulture_skills: RefCounted
+var geometry := preload("res://Scripts/Enemies/BossGeometryController.gd").new()
 var combat_movement := CombatMovement.new()
 
 func _ready() -> void:
@@ -97,6 +100,7 @@ func _ready() -> void:
 	current_health = max_health
 	base_sprite_position = sprite.position
 	base_sprite_scale = sprite.scale
+	geometry.setup(self)
 	level_refs = LevelRefs.find_from(self)
 	if level_refs != null:
 		prototype_map = level_refs.get_prototype_map()
@@ -143,7 +147,7 @@ func _physics_process(delta: float) -> void:
 			rush_previous_position = global_position
 			velocity = attack_direction * rush_speed
 			var collided := _move_in_arena((velocity * delta).limit_length(global_position.distance_to(attack_target)))
-			if not contact_hit and _point_segment_distance(_player_point(), rush_previous_position, global_position) <= hit_radius + 20.0:
+			if not contact_hit and geometry.swept_contact(_player_point(), global_position - rush_previous_position, _player_contact_radius()):
 				_damage_player(skill_damage, attack_direction)
 				contact_hit = true
 			if state_remaining <= 0.0 or collided or global_position.distance_to(attack_target) <= 0.1:
@@ -167,7 +171,7 @@ func _try_contact_damage() -> void:
 	if not _player_in_arena() or not player.has_method("take_damage"):
 		return
 	var offset := _player_point() - get_hit_position()
-	if offset.length() > contact_damage_radius:
+	if not geometry.point_in_contact(_player_point(), _player_contact_radius()):
 		return
 	var direction := offset.normalized() if not offset.is_zero_approx() else Vector2.DOWN
 	var applied: Variant = player.take_damage(contact_damage, direction, &"contact")
@@ -307,6 +311,14 @@ func _player_point() -> Vector2:
 		return global_position
 	return player.get_sort_origin() if player.has_method("get_sort_origin") else player.global_position
 
+func _player_contact_radius() -> float:
+	if not is_instance_valid(player):
+		return 0.0
+	var collider := player.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if collider != null and collider.shape is CircleShape2D:
+		return collider.shape.radius * maxf(absf(collider.global_scale.x), absf(collider.global_scale.y))
+	return 0.0
+
 func attack_contains_point(point: Vector2) -> bool:
 	var offset := point - attack_origin
 	match attack:
@@ -316,7 +328,7 @@ func attack_contains_point(point: Vector2) -> bool:
 			return point.distance_to(attack_target) <= leap_radius
 		Attack.SLAM, Attack.RUSH:
 			var length: float = slam_length if attack == Attack.SLAM else attack_origin.distance_to(attack_target)
-			var width: float = slam_half_width if attack == Attack.SLAM else hit_radius + 20.0
+			var width: float = slam_half_width if attack == Attack.SLAM else rush_half_width
 			return offset.dot(attack_direction) >= 0.0 and offset.dot(attack_direction) <= length and absf(offset.dot(attack_direction.orthogonal())) <= width
 		Attack.STING, Attack.SWEEP:
 			var radius: float = 390.0 if attack == Attack.STING else sweep_radius
@@ -383,6 +395,13 @@ func get_hit_position() -> Vector2:
 func get_hit_radius() -> float:
 	return hit_radius
 
+func get_hurt_regions() -> Array[Dictionary]:
+	return geometry.regions(&"hurt")
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F8:
+		geometry.toggle_debug()
+
 func set_movement_bounds(bounds: Rect2) -> void:
 	movement_bounds = bounds
 
@@ -403,7 +422,7 @@ func _get_safe_arena_bounds() -> Rect2:
 	var wall_inset := Vector2.ZERO
 	if is_instance_valid(prototype_map):
 		wall_inset = prototype_map.get_tile_size() * prototype_map.dune_wall_thickness_cells
-	var padding := Vector2.ONE * (hit_radius + 20.0) + wall_inset
+	var padding := geometry.ground_extent().max(Vector2.ONE * arena_padding_radius) + Vector2.ONE * 20.0 + wall_inset
 	padding = padding.max(edge_padding)
 	var minimum := movement_bounds.position + padding
 	var maximum := movement_bounds.end - padding
@@ -419,6 +438,7 @@ func _safe_arena_point(point: Vector2) -> Vector2:
 	return point.clamp(bounds.position, bounds.end)
 
 func _move_in_arena(motion: Vector2) -> bool:
+	geometry.sync_ground()
 	motion *= preload("res://Scripts/Facilities/FacilityControlEffect.gd").speed(self)
 	var target := _safe_arena_point(global_position + motion)
 	var allowed := target - global_position
@@ -454,18 +474,11 @@ func _leap_target(direction: Vector2, distance: float, maximum: float, can_redir
 	return global_position
 
 func _find_clear_landing(target: Vector2, minimum_distance: float = 0.0) -> Vector2:
-	var shape := CircleShape2D.new()
-	shape.radius = 96.0
-	var query := PhysicsShapeQueryParameters2D.new()
-	query.shape = shape
-	query.collision_mask = collision_mask
-	query.exclude = [get_rid()]
 	for i in range(13):
 		var candidate := _safe_arena_point(target.lerp(global_position, float(i) / 12.0))
 		if global_position.distance_to(candidate) + 0.1 < minimum_distance:
 			break
-		query.transform = Transform2D(0.0, candidate)
-		if get_world_2d().direct_space_state.intersect_shape(query, 1).is_empty():
+		if geometry.motion_clear(candidate, Vector2.ZERO):
 			return candidate
 	return global_position
 
@@ -533,6 +546,7 @@ func _update_visuals() -> void:
 		sprite.scale *= Vector2(1.0 + 0.22 * settle, 1.0 - 0.3 * settle)
 		sprite.rotation = attack_direction.x * 0.25 * settle
 	queue_redraw()
+	geometry.sync_ground()
 	if is_instance_valid(skill_effect_layer):
 		if vulture_skills != null:
 			vulture_skills.update_visuals()
@@ -633,7 +647,7 @@ func _draw() -> void:
 					draw_line(target + ray * 16.0, target + ray * radius * (0.3 + progress * 0.5), Color("b17d47"), 6.0, true)
 		Attack.SLAM, Attack.RUSH:
 			var length: float = slam_length if attack == Attack.SLAM else attack_origin.distance_to(attack_target)
-			var width: float = slam_half_width if attack == Attack.SLAM else hit_radius + 20.0
+			var width: float = slam_half_width if attack == Attack.SLAM else rush_half_width
 			var side := attack_direction.orthogonal() * width
 			var end := origin + attack_direction * length
 			var points := PackedVector2Array([origin + side, end + side, end - side, origin - side])

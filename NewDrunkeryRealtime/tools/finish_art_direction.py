@@ -143,6 +143,8 @@ def details(relative, view):
 def finish(file):
     tree = ET.parse(file)
     root = tree.getroot()
+    if root.get("data-art-direction") == "character-refinement-v1":
+        return  # Preserve the approved flat palette and facial shapes.
     # Composed assets (e.g. the merchant) may contain finished source groups.
     # Remove their old definitions too, then build one unique palette.
     for parent in list(root.iter()):

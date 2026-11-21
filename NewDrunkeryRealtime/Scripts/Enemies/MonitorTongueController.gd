@@ -114,7 +114,7 @@ func _clear_hits() -> void:
 	return
 
 func mouth() -> Vector2:
-	return boss.sprite.to_global(Vector2(-74, -43))
+	return boss.sprite.to_global(Vector2(-130, -64))
 
 func tip(index: int) -> Vector2:
 	var point: Vector2 = branches[index].target.position
