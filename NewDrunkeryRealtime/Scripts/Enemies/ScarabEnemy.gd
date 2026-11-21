@@ -17,8 +17,8 @@ enum State { SEARCHING, STEALING, ESCAPING_TO_CORNER, ESCAPING }
 @export var escape_move_speed: float = 144.0
 @export var escape_arrival_distance: float = 18.0
 @export var escape_duration: float = 8.0
-@export var max_stolen_items_min: int = 2
-@export var max_stolen_items_max: int = 5
+@export var max_stolen_items_min: int = 1
+@export var max_stolen_items_max: int = 3
 
 var state: State = State.SEARCHING
 var current_target: Node
@@ -242,13 +242,10 @@ func _begin_escape_cast() -> void:
 	velocity = Vector2.ZERO
 
 func receive_hit(_damage: int, _hit_direction: Vector2 = Vector2.ZERO) -> void:
-	if is_dead or not is_inside_tree():
+	if is_dead:
 		return
-	# The final red escape cast is intentionally uninterruptible.  The approach
-	# phase remains damageable, so a hit cannot disappear while the scarab is
-	# still navigating to its corner.
-	if state == State.ESCAPING:
-		return
+	# Escape casting is a warning state, not an invulnerability state. The
+	# player must still be able to finish a scarab that is about to flee.
 	light_hits += preload("res://Scripts/Facilities/FacilityControlEffect.gd").hit_weight(self)
 	if light_hits >= 3:
 		_die()
@@ -257,7 +254,7 @@ func receive_charged_hit(
 	_damage: int,
 	_hit_direction: Vector2 = Vector2.ZERO
 ) -> void:
-	if is_dead or not is_inside_tree():
+	if is_dead:
 		return
 	_die()
 

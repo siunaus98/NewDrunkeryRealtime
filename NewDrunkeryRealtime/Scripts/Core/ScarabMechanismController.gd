@@ -9,11 +9,11 @@ const ScarabEnemy = preload("res://Scripts/Enemies/ScarabEnemy.gd")
 const LevelRefs = preload("res://Scripts/Core/LevelRefs.gd")
 const LOOSE_ITEM_SCENE := preload("res://Scenes/Restaurant/loose_item.tscn")
 
-@export var spawn_interval_min: float = 10.0
-@export var spawn_interval_max: float = 16.0
-@export var max_active_scarabs: int = 2
-@export var ground_steal_duration: float = 0.5
-@export var cabinet_steal_duration: float = 1.0
+@export var spawn_interval_min: float = 18.0
+@export var spawn_interval_max: float = 28.0
+@export var max_active_scarabs: int = 1
+@export var ground_steal_duration: float = 1.0
+@export var cabinet_steal_duration: float = 2.0
 @export var death_experience_reward: int = 2
 @export var target_refresh_interval: float = 0.2
 # Keep the grid fine enough to represent the two-cell map gates after the
@@ -52,6 +52,7 @@ var navigation_clock: float = 0.0
 var navigation_obstacle_signature: Dictionary = {}
 var navigation_probe_shape := CircleShape2D.new()
 var navigation_probe := PhysicsShapeQueryParameters2D.new()
+var warning_remaining: float = 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -61,6 +62,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not active or not business_running:
 		return
+	warning_remaining = maxf(warning_remaining - delta, 0.0)
 	navigation_clock += delta
 	_refresh_navigation_for_moved_facilities()
 	_tick_navigation_cache()
@@ -182,6 +184,7 @@ func stop_business(return_stolen_items: bool = false) -> void:
 	boss_burst_number = 0
 	boss_burst_capacity = 0
 	boss_wave_owner = null
+	warning_remaining = 0.0
 	active = false
 	business_running = false
 	boss_scarab_mode = false
@@ -277,6 +280,7 @@ func _spawn_scarab() -> bool:
 	if is_instance_valid(burst_owner):
 		burst_owner.show_scarab_emergence(spawn_position)
 	scarab.set_meta("cross_region_navigation", boss_scarab_mode)
+	_show_scarab_warning("圣甲虫进入料理区！优先拦截它，或看住食材柜。")
 	scarab.steal_action_finished.connect(_on_scarab_steal_action_finished)
 	scarab.escape_finished.connect(_on_scarab_escape_finished)
 	scarab.defeated.connect(_on_scarab_defeated)
@@ -699,6 +703,7 @@ func _route_incoming_scarab(scarab: ScarabEnemy) -> bool:
 	if not boss_scarab_mode:
 		return false
 	if _is_in_kitchen(scarab.global_position):
+		_show_scarab_warning("圣甲虫已进入料理区！它会偷取地面食材或食材柜库存。")
 		if scarab.current_target_kind == &"entry":
 			scarab.clear_target()
 		return false
@@ -721,6 +726,14 @@ func _route_incoming_scarab(scarab: ScarabEnemy) -> bool:
 			scarab.set_target(entry, &"entry", route)
 			break
 	return true
+
+func _show_scarab_warning(message: String) -> void:
+	if warning_remaining > 0.0 or level_refs == null:
+		return
+	var flow := level_refs.get_level_flow_controller()
+	if flow != null and flow.overlay_controller != null and flow.overlay_controller.has_method("show_toast"):
+		flow.overlay_controller.show_toast(message, 3.5)
+		warning_remaining = 3.5
 
 func _get_kitchen_gate_candidates() -> Array[Vector2]:
 	var bounds: Rect2 = prototype_map.get_kitchen_zone_bounds()

@@ -51,9 +51,8 @@ func _init() -> void:
 	cast_started.set_escape_target(cast_started.global_position)
 	cast_started._physics_process(0.0)
 	_assert(cast_started.get_state() == ScarabEnemy.State.ESCAPING, "The escape cast must begin only after the scarab reaches its corner.")
-	# The walk to the corner remains attackable; only the red escape cast is
-	# protected. This guards against an intermittent hit target becoming
-	# impossible to kill during the transition.
+	# Both the walk and red escape cast remain attackable. The cast is a warning,
+	# never an invulnerability window.
 	var escaping_walk := ScarabEnemy.new()
 	root.add_child(escaping_walk)
 	escaping_walk.stolen_limit = 1
@@ -67,12 +66,14 @@ func _init() -> void:
 	protected_cast.set_escape_target(protected_cast.global_position)
 	protected_cast._physics_process(0.0)
 	protected_cast.receive_charged_hit(1)
-	_assert(not protected_cast.is_dead, "The red escape cast must remain uninterruptible.")
+	_assert(protected_cast.is_dead, "The red escape cast must remain killable.")
 
 	var controller := ScarabMechanismController.new()
 	root.add_child(controller)
 	_assert(is_equal_approx(controller.navigation_cell_size, 32.0), "Scarab navigation must use a configurable grid cell size.")
 	_assert(is_equal_approx(controller.navigation_clearance, 34.0), "Scarab navigation must reserve clearance around blockers.")
+	_assert(is_equal_approx(controller.spawn_interval_min, 18.0) and is_equal_approx(controller.spawn_interval_max, 28.0), "Normal scarab spawn cadence should leave response time.")
+	_assert(controller.max_active_scarabs == 1 and is_equal_approx(controller.ground_steal_duration, 1.0) and is_equal_approx(controller.cabinet_steal_duration, 2.0), "Normal scarab theft pressure should be readable.")
 	controller.start_business()
 	_assert(is_zero_approx(controller.spawn_remaining), "Business start must request the first scarab immediately.")
 	controller.configure_for_level({"map_mechanism_ids": [MapMechanismDefs.SCARAB]})

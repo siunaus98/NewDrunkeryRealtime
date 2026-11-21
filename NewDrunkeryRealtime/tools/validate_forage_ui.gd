@@ -1,6 +1,7 @@
 extends SceneTree
 
 const ForagePoint = preload("res://Scripts/Forage/ForagePoint.gd")
+const TestItemDefs = preload("res://Scripts/Kitchen/TestItemDefs.gd")
 const FORAGE_POINT_SCENE = preload("res://Scenes/Forage/forage_point.tscn")
 
 func _init() -> void:
@@ -23,6 +24,13 @@ func _init() -> void:
 	for expected_key in [KEY_W, KEY_A, KEY_S, KEY_D]:
 		if expected_key not in keys:
 			failures.append("采集QTE缺少WASD按键：%d" % expected_key)
+	var option_player := Node2D.new()
+	point.add_child(option_player)
+	point.set("active_player", option_player)
+	point.set("forage_item_ids", [TestItemDefs.RICE_ID])
+	point._build_options()
+	if point.get("option_root").get_child_count() < 2:
+		failures.append("采集选项应包含标题和卡片内容")
 	if failures.is_empty():
 		print("Forage UI rules OK: quantity cards, spacing, WASD, and prompt states.")
 		quit(0)

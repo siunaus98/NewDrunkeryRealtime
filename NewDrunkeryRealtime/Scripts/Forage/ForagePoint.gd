@@ -270,6 +270,16 @@ func _build_options() -> void:
 	option_root.z_as_relative = false
 	option_root.z_index = 90
 	add_child(option_root)
+	var title := Label.new()
+	title.text = "选择采集物"
+	title.position = to_local(active_player.global_position + Vector2(-130.0, -296.0))
+	title.size = Vector2(260.0, 34.0)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color("ffe6a3"))
+	title.add_theme_color_override("font_outline_color", Color("3b2518"))
+	title.add_theme_constant_override("outline_size", 5)
+	option_root.add_child(title)
 	_refresh_option_nodes()
 
 func harvest_for_vehicle(capacity: int) -> Dictionary:
@@ -302,31 +312,63 @@ func _refresh_option_nodes() -> void:
 		marker.z_index = 90
 		option_root.add_child(marker)
 
-		var back := ColorRect.new()
-		back.color = Color(0.06, 0.045, 0.03, 0.88)
-		back.size = Vector2(104, 112)
-		back.position = Vector2(-52, -56)
+		var back := Panel.new()
+		back.size = Vector2(148, 142)
+		back.position = Vector2(-74, -71)
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("263b3e", 0.96)
+		style.border_color = Color("e3bb63")
+		style.set_border_width_all(3)
+		style.set_corner_radius_all(14)
+		style.shadow_color = Color(0.02, 0.01, 0.0, 0.55)
+		style.shadow_size = 8
+		back.add_theme_stylebox_override("panel", style)
 		marker.add_child(back)
 
 		var icon := TextureRect.new()
 		icon.texture = TestItemDefs.get_item_texture(item_id)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.size = Vector2(70, 70)
-		icon.position = Vector2(-35, -46)
+		icon.size = Vector2(72, 72)
+		icon.position = Vector2(-36, -58)
 		marker.add_child(icon)
 
+		var key_badge := Label.new()
+		key_badge.text = String(option.get("label", ""))
+		key_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		key_badge.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		key_badge.position = Vector2(43, -61)
+		key_badge.size = Vector2(28, 28)
+		key_badge.add_theme_font_size_override("font_size", 18)
+		key_badge.add_theme_color_override("font_color", Color("3b2518"))
+		key_badge.add_theme_stylebox_override("normal", _make_option_badge_style())
+		marker.add_child(key_badge)
+
 		var label := Label.new()
-		label.text = "%s   ×%d" % [
-			String(option.get("label", "")),
-			maxi(int(option.get("yield_amount", 1)), 1)
-		]
+		label.text = TestItemDefs.get_item_display_name(item_id)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.add_theme_font_size_override("font_size", 24)
-		label.modulate = Color(1.0, 0.86, 0.45, 1.0)
-		label.size = Vector2(104, 30)
-		label.position = Vector2(-52, 24)
+		label.add_theme_font_size_override("font_size", 18)
+		label.add_theme_color_override("font_color", Color("fff3cf"))
+		label.add_theme_color_override("font_outline_color", Color("1d2527"))
+		label.add_theme_constant_override("outline_size", 4)
+		label.size = Vector2(140, 26)
+		label.position = Vector2(-70, 19)
 		marker.add_child(label)
+
+		var quantity := Label.new()
+		quantity.text = "获得 ×%d" % maxi(int(option.get("yield_amount", 1)), 1)
+		quantity.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		quantity.add_theme_font_size_override("font_size", 16)
+		quantity.add_theme_color_override("font_color", Color("f4c96e"))
+		quantity.size = Vector2(140, 24)
+		quantity.position = Vector2(-70, 46)
+		marker.add_child(quantity)
+
+func _make_option_badge_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color("f4c96e")
+	style.set_corner_radius_all(14)
+	return style
 
 func _clear_options() -> void:
 	active_options.clear()

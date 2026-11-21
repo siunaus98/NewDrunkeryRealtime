@@ -13,17 +13,17 @@ const DEFINITIONS := {
 	SCARAB: {
 		"id": SCARAB,
 		"display_name": "圣甲虫",
-		"description": "地图机制占位：圣甲虫的具体运行规则待定义。"
+		"description": "营业中会缓慢进入料理区，偷取地面食材或食材柜库存。进入料理区时会提示；普通日最多同时一只，偷取读条期间可攻击，逃跑读条也可击杀。"
 	},
 	SANDSTORM: {
 		"id": SANDSTORM,
 		"display_name": "沙尘暴",
-		"description": "地图机制占位：沙尘暴的具体运行规则待定义。"
+		"description": "周期性风沙会改变战斗区路线并制造短暂的移动压力。"
 	},
 	QUICKSAND: {
 		"id": QUICKSAND,
 		"display_name": "流沙",
-		"description": "地图机制占位：流沙的具体运行规则待定义。"
+		"description": "战斗区会出现流沙区域，站立过久会被拖拽并受到伤害。"
 	}
 }
 
