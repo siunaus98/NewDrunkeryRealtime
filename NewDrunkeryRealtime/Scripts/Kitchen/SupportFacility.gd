@@ -139,6 +139,9 @@ func _apply_shape() -> void:
 	if facility_type == TYPE_CONVEYOR:
 		footprint = Vector2i(2, 1)
 		body_size = Vector2(244.0, 104.0)
+	else:
+		footprint = Vector2i.ONE
+		body_size = Vector2(104.0, 104.0)
 	var shape := RectangleShape2D.new()
 	shape.size = body_size
 	if collision_shape != null:

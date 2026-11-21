@@ -317,6 +317,7 @@ func set_layout_mode(is_selection_layout: bool) -> void:
 		settlement_panel.hide()
 	overlay_panel.show()
 	if cards_scroll != null:
+		cards_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 		cards_scroll.scroll_horizontal = 0
 		cards_scroll.scroll_vertical = 0
 
@@ -408,7 +409,7 @@ func update_debug_status(run_context: LevelContext, progression_state: RunProgre
 		lines.append("Menu update")
 		lines.append("Current menu: %s" % ", ".join(_stringify_id_list(progression_state.get_menu_dish_ids())))
 	if run_context.danger_active:
-		lines.append("危险倒计时：%.1f 秒" % run_context.danger_time_remaining)
+		lines.append("声望偏低；归零时营业失败")
 	set_debug_text("\n".join(lines))
 
 func _get_state_name(state_value: int) -> String:

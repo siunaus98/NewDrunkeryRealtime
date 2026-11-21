@@ -923,7 +923,8 @@ static func get_dish_patience_duration(dish_item_id: StringName) -> float:
 		+ float(method_complexity) * 1.0 \
 		+ float(maturation_complexity) * 0.7 \
 		+ average_ingredient_value * 0.3
-	return snappedf(maxf(duration * 1.6, 32.0), 0.5)
+	# Includes a gathering/hunting trip and sequential manual preparation.
+	return snappedf(maxf(duration * 3.2, 150.0), 0.5)
 
 static func get_dish_gold_reward(dish_item_id: StringName) -> int:
 	var profile := get_dish_balance_profile(dish_item_id)

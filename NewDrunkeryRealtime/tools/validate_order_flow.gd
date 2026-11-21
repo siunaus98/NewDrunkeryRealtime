@@ -148,7 +148,7 @@ func _test_order_timing_is_fixed_and_derived() -> void:
 	if waiting.size() != 2:
 		failures.append("固定点单时间测试订单未正确进入等待列表")
 	else:
-		if not is_equal_approx(float(waiting[0].get("order_take_patience_duration", 0.0)), 28.0) or not is_equal_approx(float(waiting[1].get("order_take_patience_duration", 0.0)), 28.0):
+		if not is_equal_approx(float(waiting[0].get("order_take_patience_duration", 0.0)), 75.0) or not is_equal_approx(float(waiting[1].get("order_take_patience_duration", 0.0)), 75.0):
 			failures.append("点单等待时间没有统一为固定值")
 		var expected := TestItemDefs.get_dish_patience_duration(TestItemDefs.DISH_CRISP_PLATE_ID)
 		if not is_equal_approx(float(waiting[0].get("patience_duration", 0.0)), expected):

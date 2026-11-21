@@ -46,6 +46,7 @@ const SKILL_UPGRADE_PLAYTEST_TAKE_DURATION: float = 30.0
 @export var blessing_select_duration: float = 30.0
 @export var starting_gold: int = 12
 @export var night_starting_stock_per_item: int = 5
+@export var customers_per_minute: float = 3.0
 @export var magic_max: int = 8
 @export var magic_regen_interval: float = 10.8
 @export var support_facility_spawn_origin: Vector2 = Vector2(3136, 1664)
@@ -104,6 +105,10 @@ var day_transition_active: bool = false
 var day_transition_time_remaining: float = 0.0
 var input_release_guard_active: bool = false
 var test_start_day_index: int = -1
+var customer_arrivals := preload("res://Scripts/Orders/CustomerArrivalSchedule.gd").new()
+var service_started: bool = false
+var customer_visit: int = 0
+var previous_customer_dish: StringName = &""
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -361,10 +366,10 @@ func _process(delta: float) -> void:
 				else:
 					_enter_result(true, "营业时间结束。")
 					return
-			if run_context.danger_active:
-				run_context.danger_time_remaining = maxf(run_context.danger_time_remaining - delta, 0.0)
-				if run_context.danger_time_remaining <= 0.0:
-					_enter_result(false, "危险倒计时结束，酒馆失守了。")
+			if day_time_remaining > 0.0:
+				_tick_customer_arrivals(delta)
+			# Low reputation is a warning, not a second hidden failure timer.
+			# Reputation reaching zero still fails through the expiry handler.
 		LevelContext.LevelState.WAVE_BREAK:
 			wave_break_time_remaining = maxf(wave_break_time_remaining - delta, 0.0)
 			day_time_remaining = maxf(day_time_remaining - delta, 0.0)
@@ -777,6 +782,10 @@ func _enter_prepare_phase() -> void:
 	AudioCue.play_music(&"boss" if bool(run_context.selected_order_group.get("final_boss", false)) or StringName(run_context.selected_order_group.get("boss_enhanced_map_mechanism_id", &"")) != &"" else &"day")
 	run_context.state = LevelContext.LevelState.PREPARE_PHASE
 	run_context.special_guest_arrived = false
+	service_started = false
+	customer_visit = 0
+	previous_customer_dish = &""
+	customer_arrivals.reset(float(run_context.selected_order_group.get("customers_per_minute", customers_per_minute)))
 	prepare_time_remaining = _get_prepare_duration()
 	day_time_remaining = prepare_time_remaining + _get_service_duration()
 	if player != null and player.has_method("begin_blessing_day"):
@@ -802,23 +811,33 @@ func _enter_prepare_phase() -> void:
 func _start_wave_phase() -> void:
 	if run_context == null:
 		return
-	if not run_context.has_remaining_waves():
-		if bool(run_context.selected_order_group.get("boss_special_guest", false)):
-			run_context.state = LevelContext.LevelState.WAVE_ACTIVE
-			return
-		_enter_result(true, "所有波次已完成。")
-		return
 	run_context.state = LevelContext.LevelState.WAVE_ACTIVE
+	if service_started:
+		return
+	service_started = true
 	_start_map_mechanisms(true)
-	var wave_data: Dictionary = run_context.get_current_wave()
-	var wave_number: int = int(wave_data.get("wave_number", run_context.current_wave_index + 1))
-	var orders: Array = wave_data.get("orders", [])
-	if order_manager != null and order_manager.has_method("set_orders"):
-		order_manager.set_orders(orders)
-	if order_hud != null and order_hud.has_method("set_wave_number"):
-		order_hud.set_wave_number(wave_number)
+	if order_hud != null:
+		order_hud.clear_wave_status()
 	if battle_manager != null and battle_manager.has_method("start_wave"):
-		battle_manager.start_wave(run_context.current_wave_index, wave_data, run_context.selected_order_group)
+		battle_manager.start_wave(0, {}, run_context.selected_order_group)
+	_tick_customer_arrivals(0.0)
+
+func _tick_customer_arrivals(delta: float) -> void:
+	if day_time_remaining <= 0 or run_context.special_guest_arrived or not customer_arrivals.tick(delta):
+		return
+	var slot := _get_flyer_slot()
+	if slot <= 0:
+		return  # Wait for one free window; never accumulate an arrival backlog.
+	var menu: Array[StringName] = []
+	menu.assign(run_context.selected_order_group.get("regular_menu_dish_ids", progression_state.get_menu_dish_ids()))
+	menu = menu.filter(func(id: StringName) -> bool: return TestItemDefs.is_dish(id) and not TestItemDefs.is_dessert(id))
+	if menu.is_empty():
+		menu.append(TestItemDefs.DISH_RED_ID)
+	customer_visit += 1
+	var orders := OrderGroupDefs.create_arriving_customer(menu, progression_state.day_index, slot, customer_visit, customer_arrivals.rng, previous_customer_dish)
+	previous_customer_dish = StringName(orders.back().dish_item_id)
+	order_manager.add_orders(orders)
+	customer_arrivals.arrived()
 
 func _arrive_special_guest() -> void:
 	if run_context.special_guest_arrived or order_manager == null:
@@ -829,7 +848,7 @@ func _arrive_special_guest() -> void:
 	order_manager.add_orders(orders)
 	run_context.special_guest_arrived = true
 	if order_hud != null:
-		order_hud.set_wave_number(run_context.current_wave_index + 1)
+		order_hud.clear_wave_status()
 
 func _on_order_completed(order_data: Dictionary) -> void:
 	if run_context == null or _get_state() != LevelContext.LevelState.WAVE_ACTIVE:
@@ -919,18 +938,9 @@ func _on_special_guest_completed() -> void:
 	_enter_result(true, "沙海宴会评审已满足，七日盛宴完成！" if bool(run_context.selected_order_group.get("final_boss", false)) else "特殊客人已满足，Boss 关完成。")
 
 func _handle_wave_order_resolution() -> void:
-	# Boss days finish through special_guest_completed, after rewards are applied.
-	if bool(run_context.selected_order_group.get("boss_special_guest", false)):
-		return
-	if order_manager != null and order_manager.has_method("has_active_order") and order_manager.has_active_order():
-		return
-
-	run_context.advance_wave()
-	if not run_context.has_remaining_waves():
-		_enter_result(true, "所有波次已完成。")
-		return
-
-	_enter_wave_break()
+	# Clearing the current tables never closes service or starts a paired wave.
+	# New visits are driven only by the arrival schedule until closing time.
+	return
 
 func _enter_wave_break() -> void:
 	if run_context == null:
@@ -1454,14 +1464,13 @@ func _refresh_order_groups_for_current_day() -> void:
 	var templates := OrderGroupDefs.create_default_order_groups(mini(day_index, 2))
 	order_groups.clear()
 	progression_state.modifiers.ensure_offers(day_index)
-	# A shared base schedule keeps the difficulty choice about risk and reward,
-	# rather than silently giving each card a different number of customers.
+	# Difficulty affects risk and reward; all choices share the arrival rate.
 	var template: Dictionary = templates[0]
 	for offer in progression_state.modifiers.day_offers:
 		var group := template.duplicate(true)
 		group.merge(offer, true)
 		group["day_index"] = day_index
-		group["detail_text"] = "当前菜单：%s\n\n当日难题不影响特殊客人的独立耐心计时。" % ", ".join(progression_state.get_menu_dish_ids().map(func(id: StringName) -> String: return TestItemDefs.get_item_display_name(id)))
+		group["detail_text"] = "客人逐位到店 · 平均每分钟 %.1f 位\n普通日营业到点成功结算；BOSS 日保留特殊客人收尾。\n当前菜单：%s\n当日难题不影响特殊客人的独立耐心计时。" % [customers_per_minute, ", ".join(progression_state.get_menu_dish_ids().map(func(id: StringName) -> String: return TestItemDefs.get_item_display_name(id)))]
 		order_groups.append(group)
 	if overlay_controller != null:
 		overlay_controller.ensure_card_count(order_groups.size())
@@ -1800,13 +1809,13 @@ func purchase_support_facility(item_data: Dictionary) -> bool:
 	if scene_root == null:
 		facility.queue_free()
 		return false
+	if not EQUIPMENT_SCENES.has(type):
+		_configure_support_facility(facility, item_data)
 	scene_root.add_child(facility)
 	if EQUIPMENT_SCENES.has(type):
 		facility.reset_state()
 		if type != &"prep_table":
 			facility.set("processing_speed_multiplier", kitchen_processing_speed_multiplier)
-	else:
-		_configure_support_facility(facility, item_data)
 	if facility.has_method("set_aura_multiplier"):
 		facility.set_aura_multiplier(support_facility_aura_multiplier)
 	var spawn_position := _find_support_facility_spawn_position(facility)
@@ -1817,7 +1826,7 @@ func purchase_support_facility(item_data: Dictionary) -> bool:
 	return true
 
 func can_summon_flyer_customer() -> bool:
-	return _get_flyer_slot() > 0 and _get_state() == LevelContext.LevelState.WAVE_ACTIVE
+	return _get_flyer_slot() > 0 and _get_state() == LevelContext.LevelState.WAVE_ACTIVE and day_time_remaining > 0.0
 
 func _get_flyer_slot() -> int:
 	if order_manager == null or run_context == null:

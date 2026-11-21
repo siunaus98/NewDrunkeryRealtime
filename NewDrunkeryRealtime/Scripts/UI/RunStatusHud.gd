@@ -114,7 +114,7 @@ func update_day_clock(run_context: LevelContext, day_time_remaining: float, prep
 	if bool(run_context.selected_order_group.get("boss_special_guest", false)):
 		if not run_context.special_guest_arrived:
 			if run_context.state != LevelContext.LevelState.PREPARE_PHASE:
-				phase_text = "来客"
+				phase_text = "营业"
 		elif not special_clock.is_empty():
 			phase_text = "失望" if bool(special_clock.get("overdue", false)) else "耐心" if bool(special_clock.get("accepted", false)) else "接单"
 			set_day_clock(float(special_clock.remaining), float(special_clock.duration), 0.0, phase_text, daytime_state)

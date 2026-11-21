@@ -171,6 +171,7 @@ func _run() -> void:
 	flow.progression_state.menu_drink_ids.assign([Items.DRINK_OASIS_WINE_ID])
 	flow.progression_state.menu_non_drink_ids.assign([dessert])
 	flow.run_context.state = 7
+	flow.day_time_remaining = 120
 	manager.clear_orders()
 	check(flow.summon_flyer_customer() and not Items.is_dessert(manager.waiting_orders[0].dish_item_id), "Flyer customer never requests dessert")
 	main.queue_free()

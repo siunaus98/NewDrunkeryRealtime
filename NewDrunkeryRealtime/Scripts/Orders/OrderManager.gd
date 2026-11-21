@@ -17,7 +17,7 @@ signal order_expired(order_data: Dictionary)
 signal special_guest_penalty_tick(amount: int)
 signal special_guest_completed
 
-@export var default_order_take_patience_duration: float = 28.0
+@export var default_order_take_patience_duration: float = 75.0
 @export var default_order_take_action_duration: float = 0.8
 
 # Dish records keep recipe/reward data. Acceptance and timers belong only to

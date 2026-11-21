@@ -176,6 +176,9 @@ func refresh_cards() -> void:
 		blessing_cards_root.visible = true
 		blessing_cards_root.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		blessing_cards_root.add_theme_constant_override("separation", 24)
+		var outer := blessing_cards_root.get_parent() as ScrollContainer
+		if outer != null:
+			outer.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 
 	menu_scroll_containers.clear()
 	menu_row_controls = [[], []]
@@ -186,7 +189,8 @@ func refresh_cards() -> void:
 		panel.visible = i < 2
 		if i >= 2:
 			continue
-		panel.custom_minimum_size = Vector2(760.0, 640.0)
+		panel.custom_minimum_size = Vector2(760.0, 0.0)
+		panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		_apply_card_style(panel, i == focused_column)
 		_build_column(panel, i)
 	call_deferred("_deferred_ensure_focused_row_visible", refresh_generation)
@@ -263,9 +267,11 @@ func _build_column(panel: Panel, column_index: int) -> void:
 		menu_row_controls[column_index].append(list.get_child(list.get_child_count() - 1))
 
 func _deferred_ensure_focused_row_visible(generation: int) -> void:
-	await get_tree().process_frame
-	if generation != refresh_generation:
-		return
+	# Wrapped recipe labels update minimum heights over multiple layout passes.
+	for frame in range(4):
+		await get_tree().process_frame
+		if generation != refresh_generation:
+			return
 	_ensure_focused_row_visible()
 
 func _ensure_focused_row_visible() -> void:

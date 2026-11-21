@@ -2,7 +2,7 @@ class_name OrderGroupDefs
 extends RefCounted
 
 const TestItemDefs = preload("res://Scripts/Kitchen/TestItemDefs.gd")
-const SPECIAL_GUEST_TAKE_DURATION: float = 60.0
+const SPECIAL_GUEST_TAKE_DURATION: float = 120.0
 const SPECIAL_GUEST_PATIENCE_DURATION: float = 600.0
 const ELITE_CUSTOMER_CHANCE: float = 0.30
 
@@ -181,9 +181,28 @@ static func build_group_for_menu(group_data: Dictionary, menu_dish_ids: Array[St
 			rewritten_waves.append(_wave(int(wave_data.get("wave_number", rewritten_waves.size() + 1)), rewritten_orders))
 
 	result["waves"] = rewritten_waves
+	result["regular_menu_dish_ids"] = orderable_menu.duplicate()
 	result["menu_dish_ids"] = clean_menu.duplicate()
 	result["allowed_meats"] = _collect_recipe_items_by_kind(clean_menu, true)
 	result["allowed_veggies"] = _collect_recipe_items_by_kind(clean_menu, false)
+	return result
+
+static func create_arriving_customer(menu: Array[StringName], day_index: int, slot: int, visit: int, rng: RandomNumberGenerator, previous_dish: StringName = &"") -> Array[Dictionary]:
+	var dishes := _choose_customer_dishes(menu, day_index, rng, previous_dish)
+	var result: Array[Dictionary] = []
+	var customer_name: String = CUSTOMER_NAMES[rng.randi_range(0, CUSTOMER_NAMES.size() - 1)]
+	var patience := 0.0
+	for dish: StringName in dishes:
+		patience += TestItemDefs.get_dish_patience_duration(dish)
+	# Shared timer must allow preparation of every course, not only the longest.
+	patience = maxf(patience * 0.8, TestItemDefs.get_dish_patience_duration(dishes[0]))
+	for index in dishes.size():
+		var order := _order("VISIT-%d-%d" % [visit, index], slot, dishes[index], 0)
+		order.merge({"customer_name": customer_name, "customer_batch_id": "visit_%d" % visit,
+			"elite_customer": dishes.size() > 1, "customer_order_index": index,
+			"customer_order_total": dishes.size(), "day_index": day_index,
+			"patience_duration": patience}, true)
+		result.append(order)
 	return result
 
 static func _choose_customer_dishes(menu: Array[StringName], day_index: int, rng: RandomNumberGenerator, previous_dish_id: StringName) -> Array[StringName]:

@@ -146,7 +146,7 @@ func _test_special_clock() -> void:
 	var penalties: Array[int] = []
 	manager.special_guest_penalty_tick.connect(func(amount: int) -> void: penalties.append(amount))
 	manager.set_orders(Groups.get_boss_special_orders(&"scarab"))
-	manager._process(60.0)
+	manager._process(Groups.SPECIAL_GUEST_TAKE_DURATION)
 	_check(manager.get_waiting_orders().size() == 3 and manager.special_guest_overdue and penalties.is_empty(), "Acceptance timeout must retain the guest and start gradual loss without an immediate penalty.")
 	_check(not manager.special_guest_pressure_active, "An unaccepted overdue guest must not yet accelerate ordinary customers.")
 	manager._process(4.99)
@@ -230,14 +230,13 @@ func _test_live_delivery_and_hud(main: Node) -> void:
 	var updated_card: Panel = hud.order_cards.values()[0]
 	_check(is_equal_approx(updated_card.get_node("PatienceBarFrame/PatienceBarFill").size.x / updated_card.get_node("PatienceBarFrame").size.x, 0.95), "HUD immediately displays restored shared patience.")
 	player.clear_held_item()
-	# A fully departing group must finish recording all expired dishes before
-	# the level-flow callback advances to the next wave.
+	# Departure records all courses and one penalty without stopping service.
 	flow.run_context.initialize({"waves": [{"orders": [a, b, c]}, {"orders": [a]}]})
 	flow.run_context.state = Context.LevelState.WAVE_ACTIVE
 	manager.set_orders([a, b, c])
 	manager.take_order_at_slot(1)
 	manager._process(120)
-	_check(flow.run_context.failed_orders == 3 and flow.run_context.reputation == 75 and flow.run_context.current_wave_index == 1, "Customer timeout must record all dishes, one reputation penalty, and exactly one wave transition.")
+	_check(flow.run_context.failed_orders == 3 and flow.run_context.reputation == 75 and flow.run_context.current_wave_index == 0 and flow.run_context.state == Context.LevelState.WAVE_ACTIVE, "Customer timeout records all dishes and one penalty while continuous service stays open.")
 
 func _run() -> void:
 	_test_customer_clock()
