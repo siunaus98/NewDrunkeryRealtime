@@ -184,15 +184,15 @@ const ITEM_DISPLAY_NAMES := {
 	DRINK_OASIS_WINE_ID: "绿洲葡酒", DRINK_GOLD_ALE_ID: "砂金麦酒",
 	DRINK_QINGMEI_WINE_ID: "晴梅淡酿", DRINK_QINGMEI_LIGHT_FERMENT_ID: "晴梅轻酿",
 	DRINK_DOUBLE_FERMENT_ID: "双酿酒", DRINK_STONEFLOWER_HONEY_ID: "砂冠花蜜酒",
-	DRINK_SUNWHEEL_INFUSION_ID: "日轮浸酿", DRINK_ROYAL_AGED_ID: "王庭陈酿",
+	DRINK_SUNWHEEL_INFUSION_ID: "梅露莳萝酿", DRINK_ROYAL_AGED_ID: "王庭陈酿",
 	DRINK_MOON_DEW_ID: "月露特酿", DRINK_SCORCH_DOUBLE_FERMENT_ID: "烈阳双酿",
-	DISH_CRISP_PLATE_ID: "脆芽冷盘", DISH_SAND_POTATO_PLATE_ID: "沙薯凉盘",
+	DISH_CRISP_PLATE_ID: "脆芽冷盘", DISH_SAND_POTATO_PLATE_ID: "晴梅冷盘",
 	DISH_GOLDEN_FLATBREAD_ID: "砂金小饼", DISH_RED_ROLL_ID: "红鬃芽卷",
-	DISH_WHITE_PLATE_ID: "白肉菜盘", DISH_SAND_POTATO_CUTLET_ID: "沙薯肉排",
-	DISH_FOWL_SAND_ROLL_ID: "禽肉沙薯卷", DISH_RED_DOUBLE_ROAST_ID: "红鬃双烤",
+	DISH_WHITE_PLATE_ID: "禽肉芽盘", DISH_SAND_POTATO_CUTLET_ID: "沙薯羊排",
+	DISH_FOWL_SAND_ROLL_ID: "禽肉脆芽卷", DISH_RED_DOUBLE_ROAST_ID: "沙兔双烤",
 	DISH_GOLDEN_FOWL_CAKE_ID: "砂金禽饼", DISH_QINGMEI_LEAF_SHARD_ID: "梅香芽片",
 	DISH_DRYFROST_ROLL_ID: "旱霜菜卷", DISH_SUNSEED_CRISP_ID: "太阳籽脆片",
-	DISH_DILL_SAND_POTATO_CUP_ID: "莳萝沙薯盏", DISH_STONEFLOWER_BAKED_CUP_ID: "砂冠花烤盅",
+	DISH_DILL_SAND_POTATO_CUP_ID: "莳萝菜盏", DISH_STONEFLOWER_BAKED_CUP_ID: "砂冠花烤盅",
 	DISH_HARE_SKEWER_ID: "沙兔串", DISH_FOWL_POT_ID: "沙原禽锅",
 	DISH_OASIS_HOTPOT_ID: "绿洲香锅", DISH_DILL_FOWL_POT_ID: "莳萝禽锅",
 	DISH_DRYFROST_MEAT_WRAP_ID: "旱霜包肉", DISH_CAMEL_THIN_ROAST_ID: "驼肉薄烤",
@@ -207,22 +207,71 @@ const ITEM_DISPLAY_NAMES := {
 
 const ITEM_DESCRIPTIONS := {
 	TRASH_ID: "组合失败后留下的废料，不能用于料理或上菜。",
-	MEAT_RED_ID: "沙漠牧民常备的基础红肉，后期仍会回流到高级菜。",
-	MEAT_WHITE_ID: "轻肉类，连接中级火候菜。",
-	SHRIMP_ID: "紧实沙兔肉，适合串类和双份烤制。",
+	MEAT_RED_ID: "右区红鬃岩羊的红肉，第5天起用于羊肉卷与香料烤羊。",
+	MEAT_WHITE_ID: "中区沙原禽的白肉，开局用于禽肉芽盘，随后制作禽饼与禽锅。",
+	SHRIMP_ID: "中区疾风沙兔的紧实肉，适合双烤与肉串。",
 	CAMEL_MEAT_ID: "高级肉类，高价值但更考验火候排程。",
 	VEG_LEAF_ID: "仙人掌新芽，基础小菜、卷类与绿洲葡酒核心。",
-	VEG_ROOT_ID: "沙地块茎，负责主食感、冷盘与甜品底。",
-	RICE_ID: "沙漠小麦，连接烤饼、砂金麦酒和高级甜品。",
+	VEG_ROOT_ID: "右区沙地块茎，第5天起用于羊排、驼肉与王庭烤拼。",
+	RICE_ID: "中区可采的金色沙漠小麦，开局酿砂金麦酒，也可烤饼和研磨甜羹。",
 	CABBAGE_ID: "耐旱白菜，负责包裹、菜卷和主菜结构。",
-	MUSHROOM_ID: "草本香料，负责研磨与酒水尾韵。",
-	SUN_SEED_ID: "中级采集物，是烤制小菜、香锅与高级酒水的火候载体。",
-	EGG_ID: "高级甜味核心，进入甜品、晴梅淡酿和高阶酒水。",
-	TOFU_ID: "沙漠花材，承担花蜜、研磨与甜品线。",
+	MUSHROOM_ID: "左区莳萝沙甲掉落的草本香料，可研磨入菜或调酒；右区也可采集。",
+	SUN_SEED_ID: "右区采集的油香种籽，第5天起用于脆片、香锅与烈阳酒。",
+	EGG_ID: "中区可采的晴天梅，开局酿晴梅淡酿，也可切冷盘或制作甜品。",
+	TOFU_ID: "左区可采的砂冠花，第3天起用于花蜜酒、花酿冻与烤盅。",
 	SANDWORM_CORE_ID: "沙虫体内凝结的晶髓，带有流沙的余力。",
 	SCORPION_CLAW_ID: "蝎甲与毒刺之间的坚韧肉质，适合高温处理。",
 	VULTURE_FEATHERHEART_ID: "秃鹫胸腔中的风暴羽心，入口轻盈但余韵强烈。"
 	,MONITOR_TENDERLOIN_ID: "沙宴巨蜥背脊的珍肉，需要亲手从战斗区搬回。"
+}
+
+const DISH_DESCRIPTIONS := {
+	DRINK_OASIS_WINE_ID: "脆脆芽酿成的清爽绿酒，三种开局基础酒之一。",
+	DRINK_GOLD_ALE_ID: "碎金子酿成的金色麦酒，原料可在中区采集。",
+	DRINK_QINGMEI_WINE_ID: "晴天梅酿成的果酒，原料可在中区采集。",
+	DRINK_QINGMEI_LIGHT_FERMENT_ID: "以晴梅淡酿加入炙梅与梅粉，延伸中区果香酒线。",
+	DRINK_DOUBLE_FERMENT_ID: "绿洲葡酒与砂金麦酒合酿，加入烤麦增添谷香。",
+	DRINK_STONEFLOWER_HONEY_ID: "两种基础酒调入砂冠花粉，是左区花材的入门酒。",
+	DRINK_SUNWHEEL_INFUSION_ID: "炙梅与莳萝调入绿洲葡酒，带有左区草本尾韵。",
+	DRINK_ROYAL_AGED_ID: "双酒底配烤梅与烤花，适合提前规划的花果陈酿。",
+	DRINK_MOON_DEW_ID: "晴梅与绿洲双酒底，加入烤花和花粉调出月露香气。",
+	DRINK_SCORCH_DOUBLE_FERMENT_ID: "双酒底加入烤太阳籽与籽粉，展现右区油香。",
+	DISH_CRISP_PLATE_ID: "两份切芽组成的清爽小菜，开局即可就近取材。",
+	DISH_SAND_POTATO_PLATE_ID: "两份切梅叠成清凉果盘，适合提前备菜。",
+	DISH_GOLDEN_FLATBREAD_ID: "两份全熟烤麦压成金色小饼，与基础麦酒共用原料。",
+	DISH_RED_ROLL_ID: "切羊肉包入脆芽，作为右区羊肉的入门菜。",
+	DISH_WHITE_PLATE_ID: "切禽肉铺在脆芽上，开局主菜可完全在中区取材。",
+	DISH_SAND_POTATO_CUTLET_ID: "切羊肉与沙薯组合，集中使用右区原料。",
+	DISH_FOWL_SAND_ROLL_ID: "双份切禽肉包入脆芽，保留中区原料的肉卷路线。",
+	DISH_RED_DOUBLE_ROAST_ID: "双份半熟兔肉制成的厚切烤肉，来自中区沙兔。",
+	DISH_GOLDEN_FOWL_CAKE_ID: "全熟禽肉与烤麦叠成夹心饼，中区即可备齐。",
+	DISH_QINGMEI_LEAF_SHARD_ID: "脆芽配炙梅和梅粉，是中区果香小菜。",
+	DISH_DRYFROST_ROLL_ID: "左区旱霜白菜与脆芽卷成层叠菜卷。",
+	DISH_SUNSEED_CRISP_ID: "烤太阳籽配脆芽制成油香脆片，原料延伸至右区。",
+	DISH_DILL_SAND_POTATO_CUP_ID: "切白菜盛入菜盏，撒上莳萝细粉，突出左区草本风味。",
+	DISH_STONEFLOWER_BAKED_CUP_ID: "砂冠花、白菜与烤梅组合的花香小菜。",
+	DISH_HARE_SKEWER_ID: "双份微生或半熟兔肉配切芽，练习中区肉类火候。",
+	DISH_FOWL_POT_ID: "全熟禽肉与切白菜组成的禽锅，衔接中区与左区。",
+	DISH_OASIS_HOTPOT_ID: "羊肉、太阳籽与白菜组成热拼，进入右区后制作。",
+	DISH_DILL_FOWL_POT_ID: "烤禽肉与烤麦加入绿洲葡酒，撒莳萝细粉增香。",
+	DISH_DRYFROST_MEAT_WRAP_ID: "全熟兔肉包入白菜，延伸左区菜卷路线。",
+	DISH_CAMEL_THIN_ROAST_ID: "驼肉与兔肉同烤，搭配切沙薯的后期主菜。",
+	DISH_QINGMEI_SWEET_BOWL_ID: "烤梅、梅细粉和麦细粉调成甜羹，原料均来自中区。",
+	DISH_GOLDEN_BAKED_CAKE_ID: "烤麦夹入梅细粉，作为中区谷物甜品。",
+	DISH_STONEFLOWER_FROZEN_ID: "砂冠花两种加工形态调入晴梅淡酿，制成花酿冻。",
+	DISH_ROYAL_ROAST_PLATE_ID: "沙薯与太阳籽双烤，撒莳萝细粉的右区烤拼。",
+	DISH_STONEFLOWER_COLD_PLATE_ID: "花材、白菜与脆芽配莳萝细粉，集中表现左区冷菜。",
+	DISH_QINGMEI_SEARED_CUP_ID: "炙梅与烤麦加入晴梅酒及花粉，形成谷香果盏。",
+	DISH_SPICED_LAMB_ID: "三份全熟烤羊配沙薯与莳萝，是右区羊肉大菜。",
+	DISH_CAMEL_DOUBLE_ROAST_ID: "驼肉与羊肉搭配麦酒和白菜的后期双烧。",
+	DISH_ROYAL_HEAT_PLATE_ID: "驼肉、兔肉、沙薯与白菜组成的丰盛热盘。",
+	DISH_WINE_PLATTER_ID: "羊肉浸绿洲酒，加入梅粉与太阳籽调香。",
+	DISH_SUNRISE_BANQUET_ID: "烤梅与烤麦配砂冠花细粉的花果甜宴。",
+	DISH_STONEFLOWER_HONEY_FEAST_ID: "烤花与烤梅加入花细粉，形成层叠花蜜甜点。",
+	DISH_SANDWORM_ROYAL_HEAT_PLATE_ID: "沙虫晶髓配兔肉、白菜、麦粉与花粉，以绿洲酒收香。",
+	DISH_SCORPION_SUNPLATE_ID: "蝎甲肉与禽肉双烤，配脆芽、梅粉、莳萝与麦酒。",
+	DISH_VULTURE_FEATHER_FEAST_ID: "风暴羽心与兔肉配烤麦、脆芽、晴梅酒和花粉。",
+	DISH_MONITOR_ROYAL_BANQUET_ID: "巨蜥珍脊配烤羊与沙薯，汇集三区食材的最终盛筵。"
 }
 
 const ITEM_TEXTURES := {
@@ -417,30 +466,30 @@ static func get_recipes() -> Array[Dictionary]:
 	var grind_both: Array = [PROCESS_STATE_GRIND_COARSE, PROCESS_STATE_GRIND_FINE]
 	_recipe_cache = [
 		_recipe(DISH_CRISP_PLATE_ID, [_ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT, 2)], 1),
-		_recipe(DISH_SAND_POTATO_PLATE_ID, [_ingredient(VEG_ROOT_ID, PROCESS_STATE_CUT, 2)], 1),
+		_recipe(DISH_SAND_POTATO_PLATE_ID, [_ingredient(EGG_ID, PROCESS_STATE_CUT, 2)], 1),
 		_recipe(DISH_GOLDEN_FLATBREAD_ID, [_ingredient(RICE_ID, PROCESS_STATE_ROAST_WELL, 2)], 1),
 		_recipe(DISH_RED_ROLL_ID, [_ingredient(MEAT_RED_ID, PROCESS_STATE_CUT), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT)], 1),
 		_recipe(DISH_WHITE_PLATE_ID, [_ingredient(MEAT_WHITE_ID, PROCESS_STATE_CUT), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT)], 1),
 		_recipe(DISH_SAND_POTATO_CUTLET_ID, [_ingredient(MEAT_RED_ID, PROCESS_STATE_CUT), _ingredient(VEG_ROOT_ID, PROCESS_STATE_CUT)], 1),
-		_recipe(DISH_FOWL_SAND_ROLL_ID, [_ingredient(MEAT_WHITE_ID, PROCESS_STATE_CUT), _ingredient(VEG_ROOT_ID, PROCESS_STATE_CUT)], 1),
-		_recipe(DISH_RED_DOUBLE_ROAST_ID, [_ingredient(MEAT_RED_ID, PROCESS_STATE_ROAST_MEDIUM, 2)], 1),
+		_recipe(DISH_FOWL_SAND_ROLL_ID, [_ingredient(MEAT_WHITE_ID, PROCESS_STATE_CUT, 2), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT)], 1),
+		_recipe(DISH_RED_DOUBLE_ROAST_ID, [_ingredient(SHRIMP_ID, PROCESS_STATE_ROAST_MEDIUM, 2)], 1),
 		_recipe(DISH_GOLDEN_FOWL_CAKE_ID, [_ingredient(MEAT_WHITE_ID, PROCESS_STATE_ROAST_WELL), _ingredient(RICE_ID, PROCESS_STATE_ROAST_WELL)], 1),
 		_recipe(DRINK_QINGMEI_LIGHT_FERMENT_ID, [_ingredient(DRINK_QINGMEI_WINE_ID, PROCESS_STATE_NONE), _ingredient(EGG_ID, PROCESS_STATE_ROAST_WELL, 1, roast_all), _ingredient(EGG_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both)], 2),
-		_recipe(DRINK_DOUBLE_FERMENT_ID, [_ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE), _ingredient(DRINK_GOLD_ALE_ID, PROCESS_STATE_NONE), _ingredient(SUN_SEED_ID, PROCESS_STATE_ROAST_RARE, 1, roast_rare_medium)], 2),
+		_recipe(DRINK_DOUBLE_FERMENT_ID, [_ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE), _ingredient(DRINK_GOLD_ALE_ID, PROCESS_STATE_NONE), _ingredient(RICE_ID, PROCESS_STATE_ROAST_RARE, 1, roast_rare_medium)], 2),
 		_recipe(DRINK_STONEFLOWER_HONEY_ID, [_ingredient(DRINK_GOLD_ALE_ID, PROCESS_STATE_NONE), _ingredient(DRINK_QINGMEI_WINE_ID, PROCESS_STATE_NONE), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_COARSE, 1, grind_both)], 2),
-		_recipe(DRINK_SUNWHEEL_INFUSION_ID, [_ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE), _ingredient(SUN_SEED_ID, PROCESS_STATE_ROAST_WELL, 1, roast_all), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_COARSE, 1, grind_both)], 2),
+		_recipe(DRINK_SUNWHEEL_INFUSION_ID, [_ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE), _ingredient(EGG_ID, PROCESS_STATE_ROAST_WELL, 1, roast_all), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_COARSE, 1, grind_both)], 2),
 		_recipe(DISH_DRYFROST_ROLL_ID, [_ingredient(CABBAGE_ID, PROCESS_STATE_CUT, 2), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT, 2)], 2),
 		_recipe(DISH_SUNSEED_CRISP_ID, [_ingredient(SUN_SEED_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT, 2)], 2),
-		_recipe(DISH_DILL_SAND_POTATO_CUP_ID, [_ingredient(VEG_ROOT_ID, PROCESS_STATE_CUT, 3), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_FINE)], 2),
+		_recipe(DISH_DILL_SAND_POTATO_CUP_ID, [_ingredient(CABBAGE_ID, PROCESS_STATE_CUT, 3), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_FINE)], 2),
 		_recipe(DISH_QINGMEI_LEAF_SHARD_ID, [_ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT), _ingredient(EGG_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_all), _ingredient(EGG_ID, PROCESS_STATE_GRIND_COARSE, 1, grind_both)], 2),
 		_recipe(DISH_STONEFLOWER_BAKED_CUP_ID, [_ingredient(TOFU_ID, PROCESS_STATE_CUT, 2), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT), _ingredient(EGG_ID, PROCESS_STATE_ROAST_WELL)], 2),
 		_recipe(DISH_HARE_SKEWER_ID, [_ingredient(SHRIMP_ID, PROCESS_STATE_ROAST_RARE, 2, roast_rare_medium), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT)], 2),
 		_recipe(DISH_FOWL_POT_ID, [_ingredient(MEAT_WHITE_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT, 2)], 2),
 		_recipe(DISH_OASIS_HOTPOT_ID, [_ingredient(MEAT_RED_ID, PROCESS_STATE_ROAST_RARE, 1, roast_rare_medium), _ingredient(SUN_SEED_ID, PROCESS_STATE_ROAST_RARE, 1, roast_rare_medium), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT, 1)], 2),
-		_recipe(DISH_DILL_FOWL_POT_ID, [_ingredient(MEAT_WHITE_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_medium_well), _ingredient(VEG_ROOT_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_medium_well), _ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE)], 2),
+		_recipe(DISH_DILL_FOWL_POT_ID, [_ingredient(MEAT_WHITE_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_medium_well), _ingredient(RICE_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_medium_well), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_FINE), _ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE)], 2),
 		_recipe(DISH_DRYFROST_MEAT_WRAP_ID, [_ingredient(SHRIMP_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT, 2)], 2),
 		_recipe(DISH_CAMEL_THIN_ROAST_ID, [_ingredient(CAMEL_MEAT_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_medium_well), _ingredient(SHRIMP_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_medium_well), _ingredient(VEG_ROOT_ID, PROCESS_STATE_CUT)], 2),
-		_recipe(DISH_QINGMEI_SWEET_BOWL_ID, [_ingredient(EGG_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(EGG_ID, PROCESS_STATE_GRIND_FINE), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_FINE)], 2),
+		_recipe(DISH_QINGMEI_SWEET_BOWL_ID, [_ingredient(EGG_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(EGG_ID, PROCESS_STATE_GRIND_FINE), _ingredient(RICE_ID, PROCESS_STATE_GRIND_FINE)], 2),
 		_recipe(DISH_GOLDEN_BAKED_CAKE_ID, [_ingredient(RICE_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(EGG_ID, PROCESS_STATE_GRIND_FINE, 2)], 2),
 		_recipe(DISH_STONEFLOWER_FROZEN_ID, [_ingredient(TOFU_ID, PROCESS_STATE_ROAST_RARE, 1, roast_rare_medium), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both), _ingredient(DRINK_QINGMEI_WINE_ID, PROCESS_STATE_NONE)], 2),
 		_recipe(DRINK_ROYAL_AGED_ID, [_ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE), _ingredient(DRINK_QINGMEI_WINE_ID, PROCESS_STATE_NONE), _ingredient(EGG_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(TOFU_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all)], 3),
@@ -448,15 +497,15 @@ static func get_recipes() -> Array[Dictionary]:
 		_recipe(DRINK_SCORCH_DOUBLE_FERMENT_ID, [_ingredient(DRINK_GOLD_ALE_ID, PROCESS_STATE_NONE), _ingredient(SUN_SEED_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both), _ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE), _ingredient(SUN_SEED_ID, PROCESS_STATE_ROAST_WELL, 1, roast_all)], 3),
 		_recipe(DISH_ROYAL_ROAST_PLATE_ID, [_ingredient(VEG_ROOT_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(SUN_SEED_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_FINE)], 3),
 		_recipe(DISH_STONEFLOWER_COLD_PLATE_ID, [_ingredient(TOFU_ID, PROCESS_STATE_CUT, 2), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_FINE)], 3),
-		_recipe(DISH_QINGMEI_SEARED_CUP_ID, [_ingredient(EGG_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(SUN_SEED_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(DRINK_QINGMEI_WINE_ID, PROCESS_STATE_NONE), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both)], 3),
+		_recipe(DISH_QINGMEI_SEARED_CUP_ID, [_ingredient(EGG_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(RICE_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(DRINK_QINGMEI_WINE_ID, PROCESS_STATE_NONE), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both)], 3),
 		_recipe(DISH_SPICED_LAMB_ID, [_ingredient(MEAT_RED_ID, PROCESS_STATE_ROAST_WELL, 3), _ingredient(VEG_ROOT_ID, PROCESS_STATE_CUT), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_FINE)], 3),
 		_recipe(DISH_CAMEL_DOUBLE_ROAST_ID, [_ingredient(CAMEL_MEAT_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(MEAT_RED_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(DRINK_GOLD_ALE_ID, PROCESS_STATE_NONE), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT)], 3),
 		_recipe(DISH_ROYAL_HEAT_PLATE_ID, [_ingredient(CAMEL_MEAT_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(SHRIMP_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(VEG_ROOT_ID, PROCESS_STATE_CUT), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT)], 3),
 		_recipe(DISH_WINE_PLATTER_ID, [_ingredient(MEAT_RED_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE), _ingredient(EGG_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both), _ingredient(SUN_SEED_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all)], 3),
 		_recipe(DISH_SUNRISE_BANQUET_ID, [_ingredient(EGG_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(RICE_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_FINE)], 3),
 		_recipe(DISH_STONEFLOWER_HONEY_FEAST_ID, [_ingredient(TOFU_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(EGG_ID, PROCESS_STATE_ROAST_WELL, 2), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_FINE)], 3)
-		,_recipe(DISH_SANDWORM_ROYAL_HEAT_PLATE_ID, [_ingredient(SANDWORM_CORE_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_all), _ingredient(CAMEL_MEAT_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT), _ingredient(SUN_SEED_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both), _ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_COARSE, 1, grind_both)], 3)
-		,_recipe(DISH_SCORPION_SUNPLATE_ID, [_ingredient(SCORPION_CLAW_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_all), _ingredient(MEAT_RED_ID, PROCESS_STATE_ROAST_WELL, 1, roast_all), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT), _ingredient(EGG_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both), _ingredient(DRINK_GOLD_ALE_ID, PROCESS_STATE_NONE), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_COARSE, 1, grind_both)], 3)
+		,_recipe(DISH_SANDWORM_ROYAL_HEAT_PLATE_ID, [_ingredient(SANDWORM_CORE_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_all), _ingredient(SHRIMP_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT), _ingredient(RICE_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both), _ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_COARSE, 1, grind_both)], 3)
+		,_recipe(DISH_SCORPION_SUNPLATE_ID, [_ingredient(SCORPION_CLAW_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_all), _ingredient(MEAT_WHITE_ID, PROCESS_STATE_ROAST_WELL, 1, roast_all), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT), _ingredient(EGG_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both), _ingredient(DRINK_GOLD_ALE_ID, PROCESS_STATE_NONE), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_COARSE, 1, grind_both)], 3)
 		,_recipe(DISH_VULTURE_FEATHER_FEAST_ID, [_ingredient(VULTURE_FEATHERHEART_ID, PROCESS_STATE_ROAST_RARE, 1, roast_all), _ingredient(SHRIMP_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_all), _ingredient(RICE_ID, PROCESS_STATE_ROAST_WELL, 1, roast_all), _ingredient(VEG_LEAF_ID, PROCESS_STATE_CUT), _ingredient(DRINK_QINGMEI_WINE_ID, PROCESS_STATE_NONE), _ingredient(TOFU_ID, PROCESS_STATE_GRIND_FINE, 1, grind_both)], 3)
 		,_recipe(DISH_MONITOR_ROYAL_BANQUET_ID, [_ingredient(MONITOR_TENDERLOIN_ID, PROCESS_STATE_ROAST_MEDIUM, 1, roast_all), _ingredient(MEAT_RED_ID, PROCESS_STATE_ROAST_WELL), _ingredient(VEG_ROOT_ID, PROCESS_STATE_ROAST_WELL), _ingredient(CABBAGE_ID, PROCESS_STATE_CUT), _ingredient(MUSHROOM_ID, PROCESS_STATE_GRIND_FINE), _ingredient(DRINK_OASIS_WINE_ID, PROCESS_STATE_NONE)], 3)
 	]
@@ -588,7 +637,7 @@ static func get_item_display_name(item_id: StringName) -> String:
 	return ITEM_DISPLAY_NAMES.get(item_id, String(item_id))
 
 static func get_item_description(item_id: StringName) -> String:
-	return ITEM_DESCRIPTIONS.get(item_id, "")
+	return DISH_DESCRIPTIONS.get(item_id, ITEM_DESCRIPTIONS.get(item_id, ""))
 
 static func get_item_category(item_id: StringName) -> StringName:
 	return StringName(ITEM_CATEGORIES.get(item_id, &""))
@@ -793,9 +842,9 @@ const PROCESS_METHOD_SCORE := {
 ## Hidden acquisition tier. It reflects enemy/biome access rather than a
 ## player-facing rarity label, and only contributes a small balance modifier.
 const INGREDIENT_ACQUISITION_TIER := {
-	MEAT_RED_ID: 1, VEG_LEAF_ID: 1, VEG_ROOT_ID: 1, RICE_ID: 1,
-	MEAT_WHITE_ID: 2, SHRIMP_ID: 2, CABBAGE_ID: 2, MUSHROOM_ID: 2, SUN_SEED_ID: 2,
-	CAMEL_MEAT_ID: 3, EGG_ID: 3, TOFU_ID: 3
+	VEG_LEAF_ID: 1, RICE_ID: 1, EGG_ID: 1, MEAT_WHITE_ID: 1, SHRIMP_ID: 1,
+	CABBAGE_ID: 2, MUSHROOM_ID: 2, TOFU_ID: 2,
+	VEG_ROOT_ID: 3, SUN_SEED_ID: 3, MEAT_RED_ID: 3, CAMEL_MEAT_ID: 3
 }
 
 ## Hidden economy profile for the 12 base ingredients.  The rank is never
@@ -805,16 +854,16 @@ const INGREDIENT_ACQUISITION_TIER := {
 ## only ingredients, while lower-ranked battle drops appear in larger stacks.
 const INGREDIENT_VALUE_PROFILE := {
 	VEG_LEAF_ID: {"rank": 1, "source": &"battle_and_forage", "forage_yield_min": 3, "forage_yield_max": 5, "battle_drop_bonus": 2},
-	VEG_ROOT_ID: {"rank": 2, "source": &"battle_and_forage", "forage_yield_min": 3, "forage_yield_max": 5, "battle_drop_bonus": 2},
-	RICE_ID: {"rank": 3, "source": &"forage_only", "forage_yield_min": 3, "forage_yield_max": 5, "battle_drop_bonus": 0},
-	MEAT_RED_ID: {"rank": 4, "source": &"battle_only", "forage_yield_min": 0, "forage_yield_max": 0, "battle_drop_bonus": 1},
-	CABBAGE_ID: {"rank": 5, "source": &"battle_and_forage", "forage_yield_min": 2, "forage_yield_max": 4, "battle_drop_bonus": 1},
-	MUSHROOM_ID: {"rank": 6, "source": &"battle_and_forage", "forage_yield_min": 2, "forage_yield_max": 4, "battle_drop_bonus": 1},
-	SUN_SEED_ID: {"rank": 7, "source": &"forage_only", "forage_yield_min": 2, "forage_yield_max": 4, "battle_drop_bonus": 0},
-	MEAT_WHITE_ID: {"rank": 8, "source": &"battle_only", "forage_yield_min": 0, "forage_yield_max": 0, "battle_drop_bonus": 0},
-	SHRIMP_ID: {"rank": 9, "source": &"battle_only", "forage_yield_min": 0, "forage_yield_max": 0, "battle_drop_bonus": 0},
-	EGG_ID: {"rank": 10, "source": &"forage_only", "forage_yield_min": 1, "forage_yield_max": 2, "battle_drop_bonus": 0},
-	TOFU_ID: {"rank": 11, "source": &"forage_only", "forage_yield_min": 1, "forage_yield_max": 2, "battle_drop_bonus": 0},
+	VEG_ROOT_ID: {"rank": 9, "source": &"battle_and_forage", "forage_yield_min": 3, "forage_yield_max": 5, "battle_drop_bonus": 2},
+	RICE_ID: {"rank": 2, "source": &"forage_only", "forage_yield_min": 3, "forage_yield_max": 5, "battle_drop_bonus": 0},
+	MEAT_RED_ID: {"rank": 11, "source": &"battle_only", "forage_yield_min": 0, "forage_yield_max": 0, "battle_drop_bonus": 1},
+	CABBAGE_ID: {"rank": 6, "source": &"battle_and_forage", "forage_yield_min": 2, "forage_yield_max": 4, "battle_drop_bonus": 1},
+	MUSHROOM_ID: {"rank": 7, "source": &"battle_and_forage", "forage_yield_min": 2, "forage_yield_max": 4, "battle_drop_bonus": 1},
+	SUN_SEED_ID: {"rank": 10, "source": &"forage_only", "forage_yield_min": 2, "forage_yield_max": 4, "battle_drop_bonus": 0},
+	MEAT_WHITE_ID: {"rank": 4, "source": &"battle_only", "forage_yield_min": 0, "forage_yield_max": 0, "battle_drop_bonus": 0},
+	SHRIMP_ID: {"rank": 5, "source": &"battle_only", "forage_yield_min": 0, "forage_yield_max": 0, "battle_drop_bonus": 0},
+	EGG_ID: {"rank": 3, "source": &"forage_only", "forage_yield_min": 1, "forage_yield_max": 2, "battle_drop_bonus": 0},
+	TOFU_ID: {"rank": 8, "source": &"forage_only", "forage_yield_min": 1, "forage_yield_max": 2, "battle_drop_bonus": 0},
 	CAMEL_MEAT_ID: {"rank": 12, "source": &"battle_only", "forage_yield_min": 0, "forage_yield_max": 0, "battle_drop_bonus": 0}
 }
 

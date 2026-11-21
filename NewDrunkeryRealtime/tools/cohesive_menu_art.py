@@ -56,6 +56,7 @@ def menu_icons(food, path, ellipse, rect, group):
     body += path("M66 44h44l-4 38q-3 12-18 12-17 0-18-12z", "#d78c3c", width=2)
     body += path("M66 44q20-10 44 0", "none", "#fff0cf", 8)
     icons["drink_double_ferment"] = body
+    icons["drink_double_ferment"] += garnish("golden_wheat", 72, 50, .35)
 
     body = path("M42 23h44l-3 21q24 33-3 47l-12 3v12h17v7H43v-7h17V94Q24 89 32 62l13-18z", "#f3d795")
     body += path("M43 54h40q21 28-19 33-35-1-21-33z", "#e6ad47", width=2)
@@ -67,7 +68,7 @@ def menu_icons(food, path, ellipse, rect, group):
     body += path("M32 17h57l-6 24 17 48q1 19-36 20-35-1-35-19l13-48z", "#e3b25c")
     body += path("M43 50h34l14 38q-1 13-27 13-27 0-27-13z", "#bf7737", width=2)
     body += path("M35 18l-13 8 17 5m3-1h39", "none", "#f5dfac", 4)
-    body += garnish("sun_seed", 46, 52, .35) + garnish("dill", 17, 34, .32)
+    body += plum(65, 72, "#c4c66e", 13) + garnish("dill", 17, 34, .32)
     icons["drink_sunwheel_infusion"] = body
 
     body = path("M49 15h30v24l22 17v41q-4 15-37 15-32 0-37-15V56l22-17z", "#80608e")
@@ -128,12 +129,40 @@ def menu_icons(food, path, ellipse, rect, group):
         body += path(f"M{x+5} {y+2}l28 9", "none", "#bfd28d", 3)
     icons["dish_red_roll"] = body
 
+    # Starting poultry dish reads as sliced white meat on cut greens.
+    body = ""
+    for x, y, turn in [(24, 62, -15), (60, 70, 20)]:
+        leaf = path("M0 12Q12-10 39 5 25 28 0 12z", "#8bb96a", width=3)
+        leaf += path("M5 12l24-5", "none", "#d8e2aa", 3)
+        body += group(leaf, x, y, 1, turn)
+    for x, y in [(32, 50), (51, 57), (70, 64)]:
+        body += path(f"M{x} {y}q10-12 26-2l-1 18q-12 10-25 0z", "#e2b878", width=3)
+        body += ellipse(x+13, y+2, 13, 7, "#f4dfb5", width=2)
+        body += path(f"M{x+8} {y}l9 4", "none", "#c79360", 2)
+    icons["dish_white_plate"] = body
+
+    # Replaces the former potato cold plate with cut sunny plums.
+    body = ""
+    for x, y, turn in [(25, 51, -12), (60, 47, 12), (43, 72, 5)]:
+        wedge = path("M0 3q18-10 38 0-10 27-30 18z", "#9caa60", width=3)
+        wedge += path("M3 3q16-7 32 0-11 18-24 14z", "#eadb9a", width=2)
+        wedge += path("M19 5l-2 6", "none", "#b27b45", 4)
+        body += group(wedge, x, y, 1, turn)
+    icons["dish_sand_potato_plate"] = body
+
+    body = ""
+    for x, y in [(28, 46), (56, 68)]:
+        body += path(f"M{x} {y}q17-14 39 1l-2 22q-19 19-39-1z", "#a46e44", width=3)
+        body += ellipse(x+18, y+2, 19, 11, "#d4a466", width=3)
+        body += path(f"M{x+7} {y-3}l9 9m3-11l9 9", "none", "#855437", 3)
+    icons["dish_red_double_roast"] = body
+
     body = plate("#c8885d", True)
     for x, y in [(24, 54), (61, 67)]:
-        body += path(f"M{x} {y}l10-17 31 14-9 24-29-9z", "#e6ca8e", width=3)
+        body += path(f"M{x} {y}l10-17 31 14-9 24-29-9z", "#8bb96a", width=3)
         body += ellipse(x+30, y+9, 12, 14, "#f2e5bb", width=3)
-        body += rect(x+24, y+3, 7, 10, "#ce8a45", "none")
-        body += path(f"M{x+7} {y-3}l13 6m-17 3l13 6", "none", "#a87245", 3)
+        body += path(f"M{x+25} {y+2}l9 5m-11 0l10 5", "none", "#c79360", 3)
+        body += path(f"M{x+7} {y-3}l13 6m-17 3l13 6", "none", "#d9dfab", 3)
     icons["dish_fowl_sand_roll"] = body
 
     body = plate("#769e97")
@@ -155,6 +184,7 @@ def menu_icons(food, path, ellipse, rect, group):
     body += plum(50, 52, "#c8c66f", 16) + plum(80, 60, "#d8cd82", 13)
     body += path("M31 64q12-7 22 4m9 5q13 4 30-3", "none", "#fce6c6", 4)
     icons["dish_qingmei_sweet_bowl"] = body
+    icons["dish_qingmei_sweet_bowl"] += garnish("golden_wheat", 70, 67, .28)
 
     body = plate("#7caeac")
     body += path("M28 74l9-30 26-9 23 9 14 28-12 17H42z", "#d2ad57", width=3)
@@ -167,7 +197,7 @@ def menu_icons(food, path, ellipse, rect, group):
     body = bowl("#a86b59") + ellipse(64, 58, 40, 19, "#8d5a6f", width=2)
     body += plum(61, 48, "#c3b563", 17)
     body += path("M49 39l5 12m4-16l5 12m4-11l6 11", "none", "#8f6338", 3)
-    body += garnish("sun_seed", 69, 53, .3)
+    body += garnish("golden_wheat", 69, 53, .3)
     icons["dish_qingmei_seared_cup"] = body
 
     body = plate("#c48663", True)
@@ -203,13 +233,15 @@ def menu_icons(food, path, ellipse, rect, group):
 
     body = bowl("#659a88") + ellipse(64, 58, 40, 19, "#82a16c", width=2)
     body += garnish("meat_white", 24, 14, .32)
-    body += path("M61 37l12-9 12 17-14 7zM70 53l12-6 9 13-14 6z", "#efcf8f", width=2)
+    for x, y in [(67, 44), (79, 53), (66, 61), (87, 64)]:
+        body += ellipse(x, y, 7, 4, "#efcf8f", width=2)
     body += garnish("dill", 30, 5, .43)
     icons["dish_dill_fowl_pot"] = body
 
     body = bowl("#d0ad73")
     for x, y in [(41, 48), (59, 39), (73, 52)]:
-        body += path(f"M{x} {y}l5-17 16 7-7 16z", "#d8a34e", width=2)
+        body += path(f"M{x} {y}l-5-17 15-7 11 14-7 14z", "#b8c58a", width=2)
+        body += path(f"M{x+3} {y-1}l3-16", "none", "#e4e3b0", 2)
     body += garnish("dill", 16, 10, .48)
     icons["dish_dill_sand_potato_cup"] = body
 
@@ -242,4 +274,16 @@ def menu_icons(food, path, ellipse, rect, group):
     body += path("M90 42h17l-2 11q-5 5-12 0z", "#5f9d88", "none")
     body += garnish("sun_seed", 68, 52, .3)
     icons["dish_wine_platter"] = body
+
+    # Small-boss banquet ingredients stay within the center / west stage.
+    for name, special, meat in [
+        ("dish_sandworm_royal_heat_plate", "sandworm_core", "sand_hare"),
+        ("dish_scorpion_sunplate", "scorpion_claw", "meat_white"),
+    ]:
+        body = garnish("dryfrost_cabbage" if special == "sandworm_core" else "crisp_sprout", 4, 42, .45)
+        body += garnish(meat, 54, 31, .51)
+        body += garnish(special, 8, 2, .70)
+        body += garnish("golden_wheat", 69, 56, .35)
+        body += garnish("stone_bloom" if special == "sandworm_core" else "sunny_berry", 37, 67, .26)
+        icons[name] = body
     return icons

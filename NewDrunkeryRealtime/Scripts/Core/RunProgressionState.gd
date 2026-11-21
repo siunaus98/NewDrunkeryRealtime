@@ -2,6 +2,7 @@ class_name RunProgressionState
 extends RefCounted
 
 const TestItemDefs = preload("res://Scripts/Kitchen/TestItemDefs.gd")
+const IngredientSourceDefs = preload("res://Scripts/Core/IngredientSourceDefs.gd")
 const AttributeForgeDefs = preload("res://Scripts/Progression/AttributeForgeDefs.gd")
 const MapMechanismDefs = preload("res://Scripts/Core/MapMechanismDefs.gd")
 const SmallSkillDefs = preload("res://Scripts/Player/SmallSkillDefs.gd")
@@ -97,7 +98,7 @@ func reset(starting_gold: int, starting_day_index: int = 0, map_mechanism_seed: 
 	]
 	menu_non_drink_ids = [
 		TestItemDefs.DISH_CRISP_PLATE_ID,
-		TestItemDefs.DISH_RED_ROLL_ID
+		TestItemDefs.DISH_WHITE_PLATE_ID
 	]
 	_clear_pending_menu_offer()
 	_sync_legacy_menu_ids()
@@ -426,7 +427,9 @@ func get_menu_category_capacity(category: StringName) -> int:
 
 func should_offer_drink_menu_update() -> bool:
 	if day_index == 1:
-		return not _contains_any(menu_drink_ids, MEDIUM_DRINK_IDS)
+		return not _contains_any(menu_drink_ids, [TestItemDefs.DRINK_QINGMEI_LIGHT_FERMENT_ID, TestItemDefs.DRINK_DOUBLE_FERMENT_ID])
+	if day_index == 2:
+		return not _contains_any(menu_drink_ids, [TestItemDefs.DRINK_STONEFLOWER_HONEY_ID, TestItemDefs.DRINK_SUNWHEEL_INFUSION_ID])
 	if day_index == 4:
 		return not _contains_any(menu_drink_ids, HIGH_DRINK_IDS)
 	return false
@@ -444,7 +447,9 @@ func create_next_drink_offer(option_count: int = 3) -> Array[StringName]:
 	_clear_pending_menu_offer()
 	var source_ids: Array[StringName] = []
 	if day_index == 1:
-		source_ids = MEDIUM_DRINK_IDS.duplicate()
+		source_ids = [TestItemDefs.DRINK_QINGMEI_LIGHT_FERMENT_ID, TestItemDefs.DRINK_DOUBLE_FERMENT_ID]
+	elif day_index == 2:
+		source_ids = [TestItemDefs.DRINK_STONEFLOWER_HONEY_ID, TestItemDefs.DRINK_SUNWHEEL_INFUSION_ID]
 	elif day_index == 4:
 		source_ids = HIGH_DRINK_IDS.duplicate()
 	else:
@@ -452,7 +457,7 @@ func create_next_drink_offer(option_count: int = 3) -> Array[StringName]:
 
 	var candidates: Array[StringName] = []
 	for drink_id in source_ids:
-		if drink_id not in menu_drink_ids:
+		if drink_id not in menu_drink_ids and IngredientSourceDefs.is_menu_recipe_available(drink_id, day_index):
 			candidates.append(drink_id)
 	_set_pending_offer(_take_offer_candidates(candidates, option_count), &"drink")
 	return pending_menu_offer_ids.duplicate()
@@ -469,12 +474,24 @@ func create_next_non_drink_offer(option_count: int = 3) -> Array[StringName]:
 			continue
 		if _is_special_recipe(dish_id):
 			continue
+		if not IngredientSourceDefs.is_menu_recipe_available(dish_id, day_index):
+			continue
 		if owned.has(dish_id):
 			continue
 		var category := TestItemDefs.get_item_category(dish_id)
 		if not is_non_drink_menu_full() and get_menu_category_count(category) >= get_menu_category_capacity(category):
 			continue
 		candidates.append(dish_id)
+
+	# At each new region's first night, make its introduction an actual choice.
+	if day_index in [2, 4]:
+		var introduced_stage := IngredientSourceDefs.get_menu_stage(day_index)
+		var regional_candidates: Array[StringName] = []
+		for candidate in candidates:
+			if IngredientSourceDefs.get_dish_stage(candidate) == introduced_stage:
+				regional_candidates.append(candidate)
+		if not regional_candidates.is_empty():
+			candidates = regional_candidates
 
 	candidates.sort_custom(func(a: StringName, b: StringName) -> bool:
 		var category_a := TestItemDefs.get_item_category(a)
@@ -577,7 +594,8 @@ func event_menu_candidates(old_id: StringName, relation: StringName) -> Array[St
 		if has_menu_dish(id) or TestItemDefs.get_item_category(id) != TestItemDefs.get_item_category(old_id):
 			continue
 		if TestItemDefs.get_dish_difficulty(id) == difficulty and not _is_special_recipe(id):
-			result.append(id)
+			if IngredientSourceDefs.is_menu_recipe_available(id, day_index):
+				result.append(id)
 	return result
 
 func create_event_menu_offer(old_id: StringName, relation: StringName) -> bool:
@@ -657,7 +675,7 @@ func _ensure_menu_defaults() -> void:
 	if menu_non_drink_ids.is_empty():
 		menu_non_drink_ids = [
 			TestItemDefs.DISH_CRISP_PLATE_ID,
-			TestItemDefs.DISH_RED_ROLL_ID
+			TestItemDefs.DISH_WHITE_PLATE_ID
 		]
 
 func _sync_legacy_menu_ids() -> void:

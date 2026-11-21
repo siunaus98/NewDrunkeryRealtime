@@ -80,13 +80,13 @@ func build_progression_snapshot(run_context: LevelContext, current_day_index: in
 				TestItemDefs.DRINK_GOLD_ALE_ID,
 				TestItemDefs.DRINK_QINGMEI_WINE_ID
 			],
-			"menu_non_drink_ids": [TestItemDefs.DISH_CRISP_PLATE_ID, TestItemDefs.DISH_RED_ROLL_ID],
+			"menu_non_drink_ids": [TestItemDefs.DISH_CRISP_PLATE_ID, TestItemDefs.DISH_WHITE_PLATE_ID],
 			"menu_dish_ids": [
 				TestItemDefs.DRINK_OASIS_WINE_ID,
 				TestItemDefs.DRINK_GOLD_ALE_ID,
 				TestItemDefs.DRINK_QINGMEI_WINE_ID,
 				TestItemDefs.DISH_CRISP_PLATE_ID,
-				TestItemDefs.DISH_RED_ROLL_ID
+				TestItemDefs.DISH_WHITE_PLATE_ID
 			]
 		}
 	# Keep the authoritative snapshot schema in RunProgressionState. New state

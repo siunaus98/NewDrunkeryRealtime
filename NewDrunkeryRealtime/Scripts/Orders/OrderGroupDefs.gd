@@ -139,9 +139,9 @@ static func build_group_for_menu(group_data: Dictionary, menu_dish_ids: Array[St
 			if not TestItemDefs.is_dessert(dish_id):
 				orderable_menu.append(dish_id)
 	if orderable_menu.is_empty():
-		orderable_menu.append(TestItemDefs.DISH_RED_ID)
-		if TestItemDefs.DISH_RED_ID not in clean_menu:
-			clean_menu.append(TestItemDefs.DISH_RED_ID)
+		orderable_menu.append(TestItemDefs.DISH_WHITE_PLATE_ID)
+		if TestItemDefs.DISH_WHITE_PLATE_ID not in clean_menu:
+			clean_menu.append(TestItemDefs.DISH_WHITE_PLATE_ID)
 
 	var rng := RandomNumberGenerator.new()
 	if random_seed < 0:
@@ -268,13 +268,13 @@ static func get_boss_special_orders(mechanism_id: StringName) -> Array[Dictionar
 	match mechanism_id:
 		&"quicksand":
 			guest_name = "沙海王庭使者"
-			dishes = [TestItemDefs.DISH_SANDWORM_ROYAL_HEAT_PLATE_ID, TestItemDefs.DISH_OASIS_HOTPOT_ID, TestItemDefs.DISH_DRYFROST_MEAT_WRAP_ID]
+			dishes = [TestItemDefs.DRINK_OASIS_WINE_ID, TestItemDefs.DISH_STONEFLOWER_COLD_PLATE_ID, TestItemDefs.DISH_SANDWORM_ROYAL_HEAT_PLATE_ID]
 		&"scarab":
 			guest_name = "毒宴商会会首"
-			dishes = [TestItemDefs.DISH_SCORPION_SUNPLATE_ID, TestItemDefs.DISH_SPICED_LAMB_ID, TestItemDefs.DISH_QINGMEI_SEARED_CUP_ID]
+			dishes = [TestItemDefs.DRINK_GOLD_ALE_ID, TestItemDefs.DISH_QINGMEI_LEAF_SHARD_ID, TestItemDefs.DISH_SCORPION_SUNPLATE_ID]
 		&"sandstorm":
 			guest_name = "逐风信使"
-			dishes = [TestItemDefs.DISH_VULTURE_FEATHER_FEAST_ID, TestItemDefs.DISH_ROYAL_ROAST_PLATE_ID, TestItemDefs.DRINK_OASIS_WINE_ID]
+			dishes = [TestItemDefs.DRINK_QINGMEI_WINE_ID, TestItemDefs.DISH_DRYFROST_ROLL_ID, TestItemDefs.DISH_VULTURE_FEATHER_FEAST_ID]
 		&"monitor":
 			guest_name = "沙海宴会评审"
 			dishes = [TestItemDefs.DISH_MONITOR_ROYAL_BANQUET_ID, TestItemDefs.DISH_ROYAL_ROAST_PLATE_ID, TestItemDefs.DRINK_OASIS_WINE_ID]
@@ -335,7 +335,7 @@ static func get_order_weight(dish_item_id: StringName) -> float:
 
 static func _choose_weighted_dish(candidates: Array[StringName], rng: RandomNumberGenerator, previous_dish_id: StringName = &"") -> StringName:
 	if candidates.is_empty():
-		return TestItemDefs.DISH_RED_ID
+		return TestItemDefs.DISH_WHITE_PLATE_ID
 	var total_weight := 0.0
 	for dish_id in candidates:
 		var weight := get_order_weight(dish_id)

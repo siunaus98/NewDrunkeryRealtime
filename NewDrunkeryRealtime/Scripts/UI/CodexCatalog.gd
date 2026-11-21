@@ -2,6 +2,7 @@ class_name CodexCatalog
 extends RefCounted
 
 const TestItemDefs = preload("res://Scripts/Kitchen/TestItemDefs.gd")
+const IngredientSourceDefs = preload("res://Scripts/Core/IngredientSourceDefs.gd")
 const FacilityCatalog = preload("res://Scripts/Facilities/FacilityCatalog.gd")
 
 const BASIC_FACILITIES: Array[Dictionary] = [
@@ -56,9 +57,9 @@ static func get_ingredient_entries() -> Array[Dictionary]:
 		entries.append({
 			"id": item_id,
 			"name": TestItemDefs.get_item_display_name(item_id),
-			"body": "类型：%s\n主要来源：%s\n设计职责：%s" % [
+			"body": "类型：%s\n主要来源：%s\n说明：%s" % [
 				meta.get("kind", "食材"),
-				meta.get("source", "战斗区与采集"),
+				IngredientSourceDefs.format_source_hint(item_id) if not IngredientSourceDefs.get_sources_for_item(item_id).is_empty() else "击败对应 BOSS",
 				TestItemDefs.get_item_description(item_id)
 			],
 			"texture": TestItemDefs.get_item_texture(item_id)
@@ -66,12 +67,24 @@ static func get_ingredient_entries() -> Array[Dictionary]:
 	return entries
 
 static func get_battle_zone_entries() -> Array[Dictionary]:
-	return [
-		{"id": &"near", "name": "近门旱地", "body": "常驻敌人：沙原禽、疾风沙兔\n主要掉落：沙原禽肉、沙兔肉\n特点：距离料理区最近，适合优先处理基础肉类。", "texture": null},
-		{"id": &"left", "name": "西侧花冠区", "body": "常驻敌人：脆芽甲虫、莳萝沙甲\n主要掉落：脆脆芽、莳萝\n采集：可采集该区的场景食材\n特点：以非肉食材为主，远程敌人较多。", "texture": null},
-		{"id": &"right", "name": "东侧砂谷区", "body": "常驻敌人：红鬃岩羊、沙漠战驼\n主要掉落：红鬃羊肉、沙漠驼肉\n采集：可采集该区的场景食材\n特点：以肉类为主，敌人更耐打，返程距离较长。", "texture": null},
-		{"id": &"top", "name": "顶部沙丘区", "body": "常驻敌人：日轮沙蛾、砂冠守卫、裂根兽\n主要掉落：太阳籽、砂冠花、沙薯\n采集：可采集该区的场景食材\n特点：高阶非肉食材集中区域，通常需要更晚解锁。", "texture": null}
+	var entries: Array[Dictionary] = [
+		{"id": &"near", "name": "近门旱地", "enemies": "沙原禽、疾风沙兔", "texture": null},
+		{"id": &"left", "name": "西侧花冠区", "enemies": "脆芽甲虫、莳萝沙甲", "texture": null},
+		{"id": &"right", "name": "东侧砂谷区", "enemies": "红鬃岩羊、沙漠战驼", "texture": null},
+		{"id": &"top", "name": "顶部沙丘区", "enemies": "日轮沙蛾、砂冠守卫、裂根兽", "texture": null}
 	]
+	for entry: Dictionary in entries:
+		var region := StringName(entry.id)
+		var feature: String = {
+			&"near": "距离料理区最近，开局三种酒水及禽肉、兔肉料理均可在这里取材。",
+			&"left": "第3天起菜单引入白菜、莳萝和砂冠花，以菜卷、花材和草本调味为主。",
+			&"right": "第5天起菜单引入羊肉、驼肉、沙薯和太阳籽，偏重厚肉与烤拼。",
+			&"top": "可补充太阳籽、砂冠花和沙薯；探索不设日期限制。"
+		}.get(region, "")
+		entry.body = "常驻敌人：%s\n战斗掉落：%s\n采集食材：%s\n特点：%s" % [entry.enemies, IngredientSourceDefs.format_item_list(IngredientSourceDefs.get_enemy_drop_items(region)), IngredientSourceDefs.format_item_list(IngredientSourceDefs.get_forage_items(region)), feature]
+		if region != &"top":
+			entry.body += "\n菜单引入顺序：中区 → 左区 → 右区"
+	return entries
 
 static func get_dish_entries(category: StringName = &"") -> Array[Dictionary]:
 	var entries: Array[Dictionary] = []
@@ -80,6 +93,13 @@ static func get_dish_entries(category: StringName = &"") -> Array[Dictionary]:
 		if category != &"" and dish_category != category:
 			continue
 		entries.append(_build_dish_entry(dish_id))
+	entries.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var stage_a := IngredientSourceDefs.get_dish_stage(a.id)
+		var stage_b := IngredientSourceDefs.get_dish_stage(b.id)
+		if stage_a != stage_b:
+			return stage_a < stage_b
+		return TestItemDefs.get_dish_difficulty(a.id) < TestItemDefs.get_dish_difficulty(b.id)
+	)
 	return entries
 
 static func _build_dish_entry(dish_id: StringName) -> Dictionary:
@@ -89,8 +109,9 @@ static func _build_dish_entry(dish_id: StringName) -> Dictionary:
 		"id": dish_id,
 		"name": TestItemDefs.get_item_display_name(dish_id),
 		"category": TestItemDefs.get_item_category(dish_id),
-		"body": "等级：%s\n备菜：%s\n配方：%s\n说明：%s" % [
+		"body": "等级：%s\n原料阶段：%s\n备菜：%s\n配方：%s\n说明：%s" % [
 			tier,
+			IngredientSourceDefs.get_dish_source_text(dish_id),
 			TestItemDefs.get_dish_preparation_text(dish_id),
 			_format_recipe(dish_id),
 			TestItemDefs.get_item_description(dish_id)
@@ -111,21 +132,7 @@ static func _get_tier(dish_id: StringName) -> String:
 			return "高级"
 
 static func _get_ingredient_meta(item_id: StringName) -> Dictionary:
-	match item_id:
-		TestItemDefs.MEAT_RED_ID:
-			return {"kind": "肉类", "rarity": "初级", "source": "第一区主产；二区、三区普通敌人少量掉落"}
-		TestItemDefs.MEAT_WHITE_ID, TestItemDefs.SHRIMP_ID:
-			return {"kind": "肉类", "rarity": "中级", "source": "第二区主产；第三区少量回流"}
-		TestItemDefs.CAMEL_MEAT_ID:
-			return {"kind": "肉类", "rarity": "高级", "source": "第三区精英敌人主产；BOSS区可能额外掉落"}
-		TestItemDefs.VEG_LEAF_ID, TestItemDefs.VEG_ROOT_ID, TestItemDefs.RICE_ID:
-			return {"kind": "非肉食材", "rarity": "初级", "source": "第一区主采；第三区偶发回流"}
-		TestItemDefs.CABBAGE_ID, TestItemDefs.MUSHROOM_ID, TestItemDefs.SUN_SEED_ID:
-			return {"kind": "非肉食材", "rarity": "中级", "source": "第二区主采；第三区稳定回流"}
-		TestItemDefs.EGG_ID, TestItemDefs.TOFU_ID:
-			return {"kind": "非肉食材", "rarity": "高级", "source": "第三区主采；精英敌人少量掉落"}
-		_:
-			return {"kind": "食材", "rarity": "未定", "source": "战斗区与采集"}
+	return {"kind": "肉类" if item_id in [TestItemDefs.MEAT_RED_ID, TestItemDefs.MEAT_WHITE_ID, TestItemDefs.SHRIMP_ID, TestItemDefs.CAMEL_MEAT_ID] or TestItemDefs.is_boss_ingredient(item_id) else "植物食材"}
 
 static func _format_recipe(dish_id: StringName) -> String:
 	if TestItemDefs.is_barrel_drink(dish_id):

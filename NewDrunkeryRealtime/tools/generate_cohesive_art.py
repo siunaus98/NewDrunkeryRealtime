@@ -47,7 +47,7 @@ def meat(color, light, shape="steak"):
             + path("M31 57l12 3m36 18l10-8m-19-31l4 9", "none", color, 5))
 
 
-def ingredients():
+def ingredients(write=True):
     food = {
         "meat_red": meat("#b95543", "#df8060"),
         "meat_white": meat("#dca46a", "#f3d29b", "leg"),
@@ -95,8 +95,9 @@ def ingredients():
     for angle in range(0, 360, 60):
         food["stone_bloom"] += group(path("M60 64C30 63 27 33 43 26c18-7 28 10 21 36z", "#e6bf71", width=3), rotate=angle)
     food["stone_bloom"] += ellipse(64, 64, 14, 14, "#b27b45") + ellipse(60, 59, 5, 5, "#f4db9b", "none")
-    for name, body in food.items():
-        svg(f"Generated/Ingredient/{name}.svg", body)
+    if write:
+        for name, body in food.items():
+            svg(f"Generated/Ingredient/{name}.svg", body)
     return food
 
 
@@ -144,11 +145,13 @@ def write_dish(name, body):
     svg(f"Generated/DishPlated/{name}.svg", vessel + food)
 
 
-def dishes(food):
+def dishes(food, only_names=None):
     from cohesive_menu_art import menu_icons
     icons = menu_icons(food, path, ellipse, rect, group)
     catalog = recipe_catalog()
     for name, (parts, difficulty) in catalog.items():
+        if only_names is not None and name not in only_names:
+            continue
         if name in icons:
             write_dish(name, icons[name])
             continue
@@ -214,7 +217,8 @@ def dishes(food):
     # Failed food follows the same plating contract as valid recipes.
     failed = path("M22 78l11-29 26 7 12-17 24 20 10 27-25 12-40-2z", "#6f5741")
     failed += path("M36 65l9 12m14-17l12 13m6-15l12 16", "none", "#a98556", 5)
-    write_dish("failed_food", failed)
+    if only_names is None:
+        write_dish("failed_food", failed)
     return len(catalog)
 
 

@@ -9,7 +9,7 @@ const BATTLE_SOURCE_SIGN_SCENE := preload("res://Scripts/Forage/BattleSourceSign
 
 @export var region_id: StringName = &"near"
 @export var display_name: String = "采集区"
-@export var forage_item_ids: Array[StringName] = [TestItemDefs.VEG_LEAF_ID, TestItemDefs.VEG_ROOT_ID]
+@export var forage_item_ids: Array[StringName] = [TestItemDefs.VEG_LEAF_ID, TestItemDefs.RICE_ID, TestItemDefs.EGG_ID]
 @export var max_active_points: int = 4
 @export var initial_spawn_count: int = 3
 @export var spawn_interval_min: float = 5.0

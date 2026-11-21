@@ -127,6 +127,7 @@ func run() -> void:
 	check(is_equal_approx(roast.overcook_progress, roast._get_required_overcook_progress() * 1.5 / roast.overcook_duration), "Actual overcook update receives only the event burn multiplier")
 
 	stage_event(&"porcelain", 2)
+	flow.progression_state.gold = 1000
 	await settle()
 	var sink: Node = events_controller.host_facility
 	var initial_plates: int = sink.clean_plates

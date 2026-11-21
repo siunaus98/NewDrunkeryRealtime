@@ -20,7 +20,8 @@ enum ForageState {
 @export var display_name: String = "采集点"
 @export var forage_item_ids: Array[StringName] = [
 	TestItemDefs.VEG_LEAF_ID,
-	TestItemDefs.VEG_ROOT_ID
+	TestItemDefs.RICE_ID,
+	TestItemDefs.EGG_ID
 ]
 @export var search_duration: float = 3.0
 @export var selection_duration: float = 1.0

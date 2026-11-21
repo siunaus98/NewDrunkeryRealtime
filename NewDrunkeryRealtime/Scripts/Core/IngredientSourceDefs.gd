@@ -20,9 +20,9 @@ const REGION_DISPLAY_NAMES := {
 }
 
 const FORAGE_ITEMS := {
-	&"near": [TestItemDefs.VEG_LEAF_ID, TestItemDefs.VEG_ROOT_ID, TestItemDefs.EGG_ID],
+	&"near": [TestItemDefs.VEG_LEAF_ID, TestItemDefs.RICE_ID, TestItemDefs.EGG_ID],
 	&"left": [TestItemDefs.CABBAGE_ID, TestItemDefs.TOFU_ID, TestItemDefs.EGG_ID],
-	&"right": [TestItemDefs.RICE_ID, TestItemDefs.MUSHROOM_ID, TestItemDefs.SUN_SEED_ID],
+	&"right": [TestItemDefs.VEG_ROOT_ID, TestItemDefs.MUSHROOM_ID, TestItemDefs.SUN_SEED_ID],
 	&"top": []
 }
 
@@ -48,6 +48,37 @@ const ENEMY_DROPS := {
 
 static func get_region_label(region_id: StringName) -> String:
 	return String(REGION_LABELS.get(region_id, region_id))
+
+## All regions remain explorable. Only recipe offers follow this introduction order.
+static func get_menu_stage(day_index: int) -> int:
+	return 1 if day_index < 2 else (2 if day_index < 4 else 3)
+
+static func get_ingredient_stage(item_id: StringName) -> int:
+	var earliest := 4
+	for source: Dictionary in get_sources_for_item(item_id):
+		var stage := int({&"near": 1, &"left": 2, &"right": 3, &"top": 3}.get(source.region, 4))
+		earliest = mini(earliest, stage)
+	return earliest
+
+static func get_dish_stage(dish_id: StringName) -> int:
+	var stage := 1
+	for entry: Dictionary in TestItemDefs.get_display_recipe_for_dish(dish_id):
+		var item_id := StringName(entry.get("item_id", &""))
+		if TestItemDefs.is_ingredient(item_id):
+			stage = maxi(stage, get_ingredient_stage(item_id))
+		elif TestItemDefs.is_barrel_drink(item_id):
+			stage = maxi(stage, get_ingredient_stage(TestItemDefs.get_barrel_input_item_id(item_id)))
+	return stage
+
+static func is_menu_recipe_available(dish_id: StringName, day_index: int) -> bool:
+	return get_dish_stage(dish_id) <= get_menu_stage(day_index)
+
+static func get_dish_source_text(dish_id: StringName) -> String:
+	match get_dish_stage(dish_id):
+		1: return "中区原料 · 开局可制作"
+		2: return "中 / 左区原料 · 第3天起加入菜单候选"
+		3: return "含右区原料 · 第5天起加入菜单候选"
+		_: return "BOSS 专属食材 · 击败对应 BOSS 后制作"
 
 static func get_region_display_name(region_id: StringName) -> String:
 	return String(REGION_DISPLAY_NAMES.get(region_id, region_id))

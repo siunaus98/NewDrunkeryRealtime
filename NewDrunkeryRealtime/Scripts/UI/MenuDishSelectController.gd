@@ -67,7 +67,7 @@ func prepare_for_open(
 	offer_dish_ids = new_offer_dish_ids.duplicate()
 	current_menu_dish_ids = new_current_menu_dish_ids.duplicate()
 	if current_menu_dish_ids.is_empty():
-		current_menu_dish_ids.append(TestItemDefs.DISH_RED_ID)
+		current_menu_dish_ids.append(TestItemDefs.DISH_WHITE_PLATE_ID)
 	menu_max_size = maxi(new_menu_max_size, 1)
 	needs_replacement = new_needs_replacement
 	is_mandatory_update = new_is_mandatory_update
@@ -347,11 +347,12 @@ func _build_dish_row(parent: VBoxContainer, dish_id: StringName, is_selected: bo
 	meta.modulate = Color(1.0, 0.92, 0.72, 0.96)
 	if is_disabled:
 		meta.modulate = Color(0.7, 0.72, 0.75, 0.65)
-	meta.text = "难度 %d  /  奖励 %d 金币  /  %d 经验\n%s" % [
+	meta.text = "难度 %d  /  奖励 %d 金币  /  %d 经验\n%s\n%s" % [
 		TestItemDefs.get_dish_difficulty(dish_id),
 		TestItemDefs.get_dish_gold_reward(dish_id),
 		TestItemDefs.get_dish_xp_reward(dish_id),
-		TestItemDefs.get_dish_preparation_text(dish_id)
+		TestItemDefs.get_dish_preparation_text(dish_id),
+		preload("res://Scripts/Core/IngredientSourceDefs.gd").get_dish_source_text(dish_id)
 	]
 	text_column.add_child(meta)
 
@@ -381,7 +382,7 @@ func _build_recipe_text(dish_id: StringName) -> String:
 		if not (entry is Dictionary):
 			continue
 		if StringName(entry.get("source", &"")) == &"barrel":
-			parts.append("酒桶酿造")
+			parts.append("%s → 酒桶酿造" % TestItemDefs.get_item_display_name(StringName(entry.get("item_id", &""))))
 			continue
 		var item_id := StringName(entry.get("item_id", &""))
 		var count := int(entry.get("count", 1))

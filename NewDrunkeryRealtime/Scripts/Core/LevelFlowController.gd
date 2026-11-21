@@ -1481,7 +1481,7 @@ func _refresh_order_groups_for_current_day() -> void:
 		order_group_select_controller.set_current_menu_dish_ids(progression_state.get_menu_dish_ids())
 
 func _build_order_group_for_current_menu(group_data: Dictionary) -> Dictionary:
-	var menu_dish_ids: Array[StringName] = [TestItemDefs.DISH_RED_ID]
+	var menu_dish_ids: Array[StringName] = [TestItemDefs.DISH_WHITE_PLATE_ID]
 	if progression_state != null:
 		menu_dish_ids = progression_state.get_menu_dish_ids()
 	var monitor_playtest := OS.get_cmdline_user_args().has(MONITOR_PLAYTEST_ARGUMENT)
