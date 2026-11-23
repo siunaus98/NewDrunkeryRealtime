@@ -99,8 +99,8 @@ func _build_hud() -> void:
 	hud.layer = 75
 	add_child(hud)
 	panel = PanelContainer.new()
-	panel.position = Vector2(26, 20)
-	panel.size = Vector2(1868, 174)
+	panel.position = Vector2(420, 20)
+	panel.size = Vector2(1474, 174)
 	panel.add_theme_stylebox_override("panel", Style.panel())
 	hud.add_child(panel)
 	var margin := MarginContainer.new()
@@ -242,7 +242,9 @@ func _update_objectives() -> void:
 func _guide(text: String, targets: Array = []) -> void:
 	lesson_body.text = text
 	for node: Node2D in highlight_nodes:
-		if is_instance_valid(node): node.modulate = Color.WHITE
+		if is_instance_valid(node):
+			node.modulate = Color.WHITE
+			if node.has_method("set_guidance_highlight"): node._update_highlight_visual()
 	highlight_nodes.clear()
 	for target in targets:
 		var node: Node = main.get_node_or_null(target) if target is String else target
@@ -255,10 +257,10 @@ func _update_current_instruction() -> void:
 	match step:
 		0: _guide_cooking()
 		1:
-			if _dish_ready():
+			if not events.has(&"order"): _guide("先到地图外侧的客人桌前，按住 K 接单，查看客人想要的菜。", ["TestServingCounter"])
+			elif _dish_ready():
 				if _holds(Items.PLATE_ID): _guide("面对组合台按 J，将上一关做好的脆芽冷盘装进盘子。", ["AssemblyStation"])
 				else: _guide("非酒水菜需要净盘。走到左侧盘架，空手按 J 取一个净盘。", [main.get_node("PlateSink").rack])
-			elif not events.has(&"order"): _guide("走近客人，按住 K 接单，才会显示菜谱并开始等餐计时。", ["TestServingCounter"])
 			elif not events.has(&"serve"): _guide("面对上菜口按 J 交付脆芽冷盘，上菜可获得金币和经验。", ["TestServingCounter"])
 			else: _guide("脏盘 J 放入右侧净化池，再空手按住 J 清洗。净盘会回到左侧盘架。", ["PlateSink"])
 		2:
@@ -345,8 +347,9 @@ func _build_lesson_map() -> void:
 		node.visible = true
 		if name == "NightMerchant": node.always_visible = true
 		if name == "TestServingCounter":
-			node.rotation = 0
-			node.scale = Vector2(.3, .25)
+			node.position = Vector2(lesson_bounds.position.x - 144, 512)
+			node.rotation = PI / 2
+			node.scale = Vector2(.44, .25)
 		main.add_child(node)
 		lesson_nodes.append(node)
 	var refs: Node = main.get_node("LevelRefs")
@@ -360,7 +363,7 @@ func _build_lesson_map() -> void:
 	var camera: Camera2D = main.get_node("Camera2D")
 	camera.set_physics_process(false)
 	camera.zoom = Vector2.ONE * (.88 if lesson_bounds.size.y > 640 else 1.05)
-	camera.global_position = lesson_bounds.get_center() - Vector2(0, 60)
+	camera.global_position = lesson_bounds.get_center() - Vector2(100 if LAYOUTS[step].has("TestServingCounter") else 0, 60)
 	camera.reset_smoothing()
 	camera.force_update_scroll()
 
@@ -398,7 +401,8 @@ func _update_highlights() -> void:
 	for node: Node2D in highlight_nodes:
 		if is_instance_valid(node) and not node.is_queued_for_deletion():
 			var pulse := 1.12 + .16 * sin(highlight_clock * 4.0)
-			node.modulate = Color(pulse, pulse, 1.0)
+			if node.has_method("set_guidance_highlight"): node.set_guidance_highlight(true, pulse)
+			else: node.modulate = Color(pulse, pulse, 1.0)
 	if not highlight_nodes.is_empty() and is_instance_valid(highlight_nodes[0]):
 		target_label.global_position = highlight_nodes[0].global_position + Vector2(-90, -140 + sin(highlight_clock * 4.0) * 7)
 
@@ -526,6 +530,7 @@ func _spawn_enemy() -> void:
 func _draw() -> void:
 	for node: Node2D in highlight_nodes:
 		if not is_instance_valid(node) or node.is_queued_for_deletion(): continue
+		if node.is_in_group("serving_counters"): continue
 		var radius := 78.0 + sin(highlight_clock * 4.0) * 7
 		draw_circle(node.global_position, radius, Color(1.0, .80, .25, .10))
 		draw_arc(node.global_position, radius, 0, TAU, 56, Color(1.0, .85, .36, .95), 5, true)

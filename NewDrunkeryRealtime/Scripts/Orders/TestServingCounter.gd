@@ -46,8 +46,6 @@ const SPECIAL_GUEST_PROMPT_COLOR := Color(1.0, 0.25, 0.28, 1.0)
 var player: Node2D
 var is_highlighted: bool = false
 var focused_slot_index: int = -1
-var slot_polygons: Array[Polygon2D] = []
-var slot_outlines: Array[Line2D] = []
 var order_target_slot_index: int = -1
 var delivered_slot_index: int = -1
 var slot_marker_positions: Array[Vector2] = []
@@ -366,55 +364,18 @@ func _local_rect_to_global(local_rect: Rect2) -> Rect2:
 	return Rect2(Vector2(min_x, min_y), Vector2(max_x - min_x, max_y - min_y))
 
 func _ensure_highlight_nodes() -> void:
-	if slot_polygons.size() == slot_count and slot_outlines.size() == slot_count:
-		_update_highlight_visual()
-		return
-
 	for child in highlight_layer.get_children():
 		child.queue_free()
-	slot_polygons.clear()
-	slot_outlines.clear()
-
-	for i in range(slot_count):
-		var polygon := Polygon2D.new()
-		polygon.visible = false
-		polygon.color = highlight_fill_color
-		highlight_layer.add_child(polygon)
-		slot_polygons.append(polygon)
-
-		var outline := Line2D.new()
-		outline.visible = false
-		outline.width = 2.0
-		outline.default_color = highlight_outline_color
-		outline.closed = true
-		highlight_layer.add_child(outline)
-		slot_outlines.append(outline)
-
 	_update_highlight_visual()
 
 func _update_highlight_visual() -> void:
-	if slot_polygons.is_empty() or slot_outlines.is_empty():
-		return
+	set_guidance_highlight(is_highlighted, 1.22)
 
-	for i in range(slot_count):
-		var is_slot_visible: bool = is_highlighted and i == focused_slot_index
-		var slot_rect: Rect2 = _get_slot_rect_local(i)
-		var points := PackedVector2Array([
-			slot_rect.position,
-			slot_rect.position + Vector2(slot_rect.size.x, 0.0),
-			slot_rect.position + slot_rect.size,
-			slot_rect.position + Vector2(0.0, slot_rect.size.y)
-		])
-
-		slot_polygons[i].polygon = points
-		slot_polygons[i].visible = is_slot_visible
-		slot_polygons[i].color = highlight_fill_color
-
-		var outline_points := points
-		outline_points.append(points[0])
-		slot_outlines[i].points = outline_points
-		slot_outlines[i].visible = is_slot_visible
-		slot_outlines[i].default_color = highlight_outline_color
+func set_guidance_highlight(active: bool, brightness: float = 1.22) -> void:
+	# Only table art changes: interaction rectangles and order UI stay unlit.
+	var tint := Color(brightness, brightness, 1.04) if active else Color.WHITE
+	lower_sprite.modulate = tint
+	top_sprite.modulate = tint
 
 func _rebuild_slot_marker_positions() -> void:
 	slot_marker_positions.clear()

@@ -42,7 +42,12 @@ func check_lesson_layout() -> void:
 		check(is_instance_valid(main.get_node_or_null(name)) == expected.has(name), "Lesson %d only instantiates needed facility: %s" % [tutorial.step + 1, name])
 	check(tutorial.lesson_nodes.size() == expected.size(), "Previous lesson facilities have been freed")
 	for node: Node2D in tutorial.lesson_nodes:
-		check(map.is_point_in_kitchen_zone(node.global_position), "Current facility lies inside lesson map")
+		if node.is_in_group("serving_counters"):
+			check(not map.is_point_in_playable_area(node.global_position), "Guest table stands outside playable map")
+			var art_bounds: Rect2 = node._local_rect_to_global(Rect2(-512, -512, 1024, 1024))
+			check(not art_bounds.intersects(tutorial.lesson_bounds), "Entire guest table art stays outside playable floor")
+		else:
+			check(map.is_point_in_kitchen_zone(node.global_position), "Current facility lies inside lesson map")
 		check(node.is_visible_in_tree(), "Required facility is visible: " + String(node.name))
 	check(tutorial.lesson_body.text.split("\n").size() <= 2 and tutorial.lesson_body.text.length() < 180, "Only a short current-action instruction is shown")
 	if tutorial.step not in [tutorial.SKILLS] and not tutorial.ready_to_advance:
@@ -51,12 +56,21 @@ func check_lesson_layout() -> void:
 
 func accept_order() -> void:
 	var counter: Node = main.get_node("TestServingCounter")
-	actor.global_position = counter.global_position + Vector2(0, 90)
+	actor.global_position = Vector2(tutorial.lesson_bounds.position.x + 48, counter.global_position.y)
+	var focus: Dictionary = preload("res://Scripts/Player/InteractionFocusQuery.gd").select_target(actor, [counter], actor.is_holding_item(), actor.global_position, Vector2.LEFT, 190, PI / 4)
+	check(focus.get("target") == counter and tutorial.lesson_bounds.has_point(actor.global_position), "Guest table can be reached from inside the map")
+	counter.set_pickup_drop_focus_data(actor, focus.get("focus_data", {}))
+	counter.set_pickup_drop_highlight(true)
+	check(counter.lower_sprite.modulate != Color.WHITE and counter.top_sprite.modulate != Color.WHITE, "Approach highlights both table art sprites")
+	check(counter.highlight_layer.get_child_count() == 0 and counter.marker_layer.modulate == Color.WHITE, "Interaction area and order markers are not highlighted")
 	for index in range(8):
 		counter.focused_slot_index = 0
 		counter.process_hold_interaction(actor, .2)
 		await process_frame
 	check(not main.get_node("OrderManager").active_orders.is_empty(), "Guest order accepted")
+	main.get_node("OrderHud")._relayout_cards(true)
+	for card: Control in main.get_node("OrderHud").order_cards.values():
+		check(not card.get_global_rect().intersects(tutorial.panel.get_global_rect()), "Tutorial instructions never cover customer order card")
 
 func deliver() -> bool:
 	var counter: Node = main.get_node("TestServingCounter")
@@ -112,11 +126,13 @@ func run() -> void:
 	assembly = main.get_node("AssemblyStation")
 	check(not assembly.can_take_item(actor), "Dish cannot be taken without clean plate")
 	tutorial._update_objectives()
+	check(tutorial.highlight_nodes.has(main.get_node("TestServingCounter")) and not actor.is_holding_item(), "Second lesson starts by accepting order before picking up plate or dish")
+	await accept_order()
+	tutorial._update_objectives()
 	check(tutorial.highlight_nodes.has(main.get_node("PlateSink").rack), "Exact clean-plate rack highlighted")
 	check(main.get_node("PlateSink").rack.take_item_to_player(actor), "Player takes clean plate")
 	check(assembly.take_item_to_player(actor), "Player actively plates prepared dish")
 	tutorial._update_objectives()
-	await accept_order()
 	check(deliver(), "Cold dish serves actual guest")
 	check(actor.get_held_item_id() == Items.DIRTY_PLATE_ID, "Serving returns dirty plate")
 	await wash()
@@ -268,6 +284,11 @@ func run() -> void:
 				await settle()
 				await RenderingServer.frame_post_draw
 				root.get_texture().get_image().save_png("res://_artifact_work/tutorial/finished_cut.png")
+			if lesson == 1:
+				await accept_order()
+				await settle()
+				await RenderingServer.frame_post_draw
+				root.get_texture().get_image().save_png("res://_artifact_work/tutorial/service_after_accept.png")
 	tutorial._leave()
 	await settle()
 	check(current_scene.get_script() == load("res://Scripts/UI/GameStartController.gd") and not has_meta("run_setup"), "Leaving tutorial returns to a fresh title")
