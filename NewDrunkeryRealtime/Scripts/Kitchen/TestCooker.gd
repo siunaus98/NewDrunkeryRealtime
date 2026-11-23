@@ -479,8 +479,7 @@ func _finish_processing(other_player: Node) -> void:
 			if TestItemDefs.get_process_family(item_process_state) == &"grind":
 				blessing_runtime.on_grind_completed()
 
-	if other_player != null and take_item_to_player(other_player):
-		return
+	# Completing work leaves the result on the station. J is the explicit pickup.
 	_update_station_progress_visual()
 
 func _clear_item() -> void:

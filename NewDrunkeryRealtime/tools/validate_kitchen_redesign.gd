@@ -92,6 +92,9 @@ func _test_recipes() -> void:
 			expected = 3 if complexity else 4
 		elif int(recipe.difficulty) == 3:
 			expected = 6 if boss_portions > 0 else (4 if complexity else 5)
+		# Authored poultry dishes gained a sprout/wine portion in the regional menu revision.
+		if dish_id == Items.DISH_FOWL_SAND_ROLL_ID: expected = 3
+		if dish_id == Items.DISH_DILL_FOWL_POT_ID: expected = 4
 		_check(portions == expected, "Wrong portion count for %s: %d expected %d" % [dish_id, portions, expected])
 		_check(boss_portions <= 1, "Boss dishes use exactly one boss ingredient.")
 		var authored_recipe: Array = recipe.ingredients.duplicate(true)
@@ -225,6 +228,7 @@ func _test_seasoning() -> void:
 	_hold(Items.SUN_SEED_ID)
 	_check(grind.receive_item_from_player(player), "Grinder accepts a raw ingredient.")
 	grind._advance_processing(grind.hold_process_duration, player)
+	_check(not player.is_holding_item() and grind.take_item_to_player(player), "Finished seasoning waits for explicit pickup.")
 	_check(player.get_held_item_id() == Items.SEASONING_BOX_ID and int(player.get_held_item_payload().get("servings", 0)) == 4, "One completed grind yields four fine seasoning servings.")
 	_check(table.receive_item_from_player(player), "Seasoning box can be stored.")
 	_hold(Items.PLATE_ID)
@@ -241,6 +245,7 @@ func _test_seasoning() -> void:
 	_check(grind.take_item_to_player(player) and int(player.get_held_item_payload().get("servings", 0)) == 4, "Early coarse takeout is a four-serving box.")
 	_check(grind.receive_item_from_player(player), "A coarse batch can be reinserted for finer grinding.")
 	grind._advance_processing(grind.hold_process_duration, player)
+	_check(not player.is_holding_item() and grind.take_item_to_player(player), "Finished seasoning waits for explicit pickup.")
 	_check(int(player.get_held_item_payload().get("servings", 0)) == 4 and player.get_held_item_payload().get("process_state") == Items.PROCESS_STATE_GRIND_FINE, "Regrinding preserves servings instead of multiplying yield.")
 	player.clear_held_item()
 	grind.reset_state()

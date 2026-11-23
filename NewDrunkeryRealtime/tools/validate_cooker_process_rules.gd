@@ -68,12 +68,14 @@ func _run() -> void:
 	player.clear_held_item()
 	player.pick_up_item(Items.TEST_ITEM_ID, null)
 	_check(cut.receive_item_from_player(player), "Cutting must accept raw food.")
-	cut._advance_processing(0.0, null, true)
+	cut._advance_processing(0.0, player, true)
 	_check(cut.item_process_state == Items.PROCESS_STATE_NONE and not cut.can_take_item(player), "Partial cutting stays raw and cannot be removed.")
 	for press in range(cut.required_interact_presses + 1):
 		if cut.processing_active:
-			cut._advance_processing(0.0, null, true)
+			cut._advance_processing(0.0, player, true)
 	_check(cut.item_process_state == Items.PROCESS_STATE_CUT and cut.can_take_item(player), "Finished cutting must become removable cut food.")
+	_check(not player.is_holding_item() and cut.has_item, "Finishing cutting with an actual player leaves food on the station.")
+	_check(cut.take_item_to_player(player) and player.get_held_item_process_state() == Items.PROCESS_STATE_CUT, "Only explicit pickup takes completed cutting output.")
 	var raw_thresholds: Array[float] = [0.75, -0.1, 0.25, 1.0, 0.25, 1.5]
 	var thresholds: Array[float] = Rules.normalized_thresholds(raw_thresholds)
 	_check(thresholds == [0.25, 0.25, 0.75] and raw_thresholds[0] == 0.75, "Threshold normalization must sort/filter without mutating exports or removing duplicates.")

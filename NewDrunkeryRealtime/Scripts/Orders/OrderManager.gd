@@ -182,6 +182,8 @@ func take_order_at_slot(slot_number: int, player: Node = null) -> bool:
 		return false
 	var customer_id: String = order.customer_id
 	var customer: Dictionary = customers[customer_id]
+	if bool(customer.get("accepted", false)):
+		return false
 	if not bool(customer.get("special_guest", false)):
 		var was_quick := float(customer.order_take_patience_duration) - float(customer.order_take_time_remaining) <= 3.0
 		var blessing_runtime := _get_blessing_runtime()
@@ -220,6 +222,8 @@ func process_take_order_at_slot(slot_number: int, delta: float, player: Node = n
 	if order.is_empty():
 		return false
 	var customer: Dictionary = customers[order.customer_id]
+	if bool(customer.get("accepted", false)):
+		return false
 	var required := _get_take_action_duration(customer)
 	if float(customer.get("order_take_action_progress", 0.0)) <= 0.001 and player != null and player.has_method("consume_instant_work") and player.consume_instant_work(&"order"):
 		customer["order_take_action_progress"] = required

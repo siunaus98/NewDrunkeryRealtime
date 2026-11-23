@@ -111,6 +111,7 @@ func _test_processing() -> void:
 	_check(cut.receive_item_from_player(player), "Raw item enters cutting station.")
 	for i in range(cut.required_interact_presses):
 		cut._advance_processing(0.0, player, true)
+	_check(not player.is_holding_item() and cut.take_item_to_player(player), "Completed cut waits for explicit pickup.")
 	_expect_energy(player, 5, "A completed cut grants one processing reward.")
 	_check(bool(player.get_held_item_payload().get(Energy.PROCESS_REWARDED, false)), "Cut output owns its processing marker.")
 	_check(table.receive_item_from_player(player), "Processed food can be staged on a table.")
@@ -140,6 +141,7 @@ func _test_processing() -> void:
 	_check(Carry.take_last_portion(player, Items.PLATE_ID, plate), "LIFO extraction recovers the portion with metadata.")
 	_check(grind.receive_item_from_player(player), "Coarse portion may be refined.")
 	grind._advance_processing(grind.hold_process_duration, player)
+	_check(not player.is_holding_item() and grind.take_item_to_player(player), "Finished fine grind waits for pickup.")
 	_expect_energy(player, 5, "Refining a rewarded coarse portion grants no duplicate reward.")
 	_expect_energy(teammate, 5, "Batch splitting does not duplicate the worker reward.")
 	_check(int(player.get_held_item_payload().servings) == 1, "Reprocessing a split portion conserves servings.")
@@ -175,11 +177,11 @@ func _test_work_speed() -> void:
 	cut.receive_item_from_player(player)
 	for i in range(ceili(float(cut.required_interact_presses) / 2.0)):
 		cut._advance_processing(0, player, true)
-	_check(not cut.has_item and player.get_held_item_process_state() == Items.PROCESS_STATE_CUT, "Ultimate halves the number of cutting presses.")
+	_check(cut.has_item and not cut.processing_active and not player.is_holding_item() and cut.item_process_state == Items.PROCESS_STATE_CUT, "Ultimate halves the number of cutting presses.")
 	_hold(Items.SUN_SEED_ID)
 	grind.receive_item_from_player(player)
 	grind._advance_processing(grind.hold_process_duration / 2, player)
-	_check(not grind.has_item, "Ultimate halves attended grind duration.")
+	_check(grind.has_item and not grind.processing_active and not player.is_holding_item(), "Ultimate halves attended grind duration without automatic pickup.")
 	_hold(Items.MEAT_RED_ID)
 	roast.receive_item_from_player(player)
 	roast._advance_processing(roast.auto_process_duration * 0.25, null)
@@ -227,7 +229,7 @@ func _test_instant_grind_stages() -> void:
 	_check(not grind.process_hold_interaction(player, 0.0), "Held input cannot immediately chain the free fine grind in the same press.")
 	grind.instant_grind_requires_release = false
 	_check(grind._advance_processing(0.0, player), "Free fine grind follow-up succeeds.")
-	_check(not grind.has_item and player.get_held_item_id() == Items.SEASONING_BOX_ID, "Free fine grind completes the same ingredient without consuming another charge.")
+	_check(grind.has_item and not grind.processing_active and not player.is_holding_item() and grind.take_item_to_player(player), "Free fine grind completes the same ingredient without consuming another charge.")
 	player.skill_controller.set_big_variant(BigSkillDefs.BASE)
 	player.clear_held_item()
 
@@ -295,10 +297,9 @@ func _test_combat() -> void:
 	scarab.global_position = player.global_position + Vector2(70, -34)
 	scarab.state = Scarab.State.ESCAPING
 	player.combat_controller._apply_attack_hit(shape, any_zone, 1.0)
-	_expect_energy(player, 16, "Invulnerable escaping scarab grants no hit or kill reward.")
-	scarab.state = Scarab.State.SEARCHING
+	_expect_energy(player, 30, "Escaping scarab remains killable and grants its reward once.")
 	player.combat_controller._apply_attack_hit(shape, any_zone, 1.0)
-	_expect_energy(player, 30, "A killable scarab grants heavy-hit and kill energy.")
+	_expect_energy(player, 30, "Dead scarab grants no duplicate reward.")
 
 func _run() -> void:
 	main = MAIN.instantiate()
