@@ -31,6 +31,19 @@ func cut(id: StringName) -> void:
 	for index in range(30): station.interact_with_player(actor)
 	check(actor.get_held_item_id() == id and actor.get_held_item_process_state() == Items.PROCESS_STATE_CUT, "Finished cut output returns to hand")
 
+func check_lesson_layout() -> void:
+	var expected: Dictionary = tutorial.LAYOUTS[tutorial.step]
+	var map: Node = main.get_node("PrototypeMap")
+	check(map.map_regions.size() == 1 and map.get_world_bounds().size == tutorial.MAP_SIZES[tutorial.step], "Lesson has its own compact map")
+	for name: String in tutorial.facility_templates:
+		check(is_instance_valid(main.get_node_or_null(name)) == expected.has(name), "Lesson %d only instantiates needed facility: %s" % [tutorial.step + 1, name])
+	check(tutorial.lesson_nodes.size() == expected.size(), "Previous lesson facilities have been freed")
+	for node: Node2D in tutorial.lesson_nodes:
+		check(map.is_point_in_kitchen_zone(node.global_position), "Current facility lies inside lesson map")
+		check(node.is_visible_in_tree(), "Required facility is visible: " + String(node.name))
+	check(tutorial.lesson_body.text.split("\n").size() <= 2 and tutorial.lesson_body.text.length() < 180, "Only a short current-action instruction is shown")
+	check(not is_instance_valid(main.get_node_or_null("StorageCabinetDesertBird")), "Unrelated ingredient cabinet removed")
+
 func run() -> void:
 	var title: Node = load("res://Scenes/Main/game_start.tscn").instantiate()
 	root.add_child(title)
@@ -52,11 +65,10 @@ func run() -> void:
 	flow._process(1)
 	check(flow.magic_current > 0, "Tutorial preserves real magic regeneration")
 	flow.magic_current = before_magic
-	check(main.get_node("PrototypeMap").get_world_bounds().size == Vector2(1536, 1280), "Tutorial map is compact")
+	check(main.get_node("PrototypeMap").get_world_bounds().size == Vector2(1024, 640), "Tutorial map is compact")
 	check(not is_instance_valid(main.get_node_or_null("ForageRegionLeft")) and get_nodes_in_group("enemies").is_empty(), "No random region or combat waves in tutorial")
 	check(not has_meta("run_setup"), "Tutorial entry setup is consumed and cannot contaminate next run")
-	for name in ["TestCooker", "BakeCooker", "GrindCooker", "AssemblyStation", "PlateSink", "TrashBin", "NightMerchant"]:
-		check(main.get_node("PrototypeMap").is_point_in_kitchen_zone(main.get_node(name).global_position), "Tutorial facility lies inside kitchen: " + name)
+	check_lesson_layout()
 	tutorial.advance()
 	check(tutorial.step == 0, "Incomplete lesson cannot advance")
 	cut(Items.VEG_LEAF_ID)
@@ -68,6 +80,7 @@ func run() -> void:
 	check(barrel.take_item_to_player(actor), "Tutorial barrel yields actual wine")
 	tutorial.advance()
 	check(tutorial.step == 1, "Cut and barrel operations unlock roast lesson")
+	check_lesson_layout()
 	var roast: Node = main.get_node("BakeCooker")
 	actor.global_position = roast.global_position + Vector2(0, 80)
 	hold(Items.RICE_ID)
@@ -85,16 +98,18 @@ func run() -> void:
 	for index in range(100): grind.process_hold_interaction(actor, .1)
 	tutorial.advance()
 	check(tutorial.step == 2, "Roast and grind unlock assembly")
+	check_lesson_layout()
 	var assembly: Node = main.get_node("AssemblyStation")
 	for index in range(2):
-		cut(Items.VEG_LEAF_ID)
+		main.get_node("TestTable" if index == 0 else "TutorialPrepTable").take_item_to_player(actor)
 		check(assembly.receive_item_from_player(actor), "Assembly receives actual cut sprout")
 	check(assembly.interact_with_player(actor), "Actual combination creates cold plate")
 	check(not assembly.can_take_item(actor), "Finished dish requires plate")
 	main.get_node("PlateSink").rack.take_item_to_player(actor)
 	check(assembly.take_item_to_player(actor), "Clean plate collects finished dish")
 	tutorial.advance()
-	check(tutorial.step == 3 and actor.get_held_item_id() == Items.DISH_CRISP_PLATE_ID, "Plated dish survives into customer lesson")
+	check(tutorial.step == 3 and actor.get_held_item_id() == Items.DISH_CRISP_PLATE_ID, "Service lesson supplies its own plated dish")
+	check_lesson_layout()
 	var counter: Node = main.get_node("TestServingCounter")
 	actor.global_position = counter.global_position + Vector2(0, 90)
 	for index in range(8):
@@ -113,15 +128,19 @@ func run() -> void:
 		await process_frame
 	tutorial.advance()
 	check(tutorial.step == 4, "Acceptance, service and washing unlock income lesson")
+	check_lesson_layout()
 	check(flow.progression_state.gold > tutorial.baseline_gold, "Real service grants gold")
 	check(int(tutorial.events.get(&"earned_gold", 0)) > 0 and int(tutorial.events.get(&"earned_xp", 0)) > 0, "Income lesson displays actual awarded gold and XP")
-	flow.handle_night_rest_interaction(&"merchant")
+	var merchant: Node = main.get_node("NightMerchant")
+	check(merchant.is_visible_in_tree() and merchant.is_pickup_drop_focusable(actor), "Merchant is visible and interactable in its own lesson")
+	check(merchant.interact_with_player(actor), "Real merchant interaction opens shop")
 	for index in range(4):
 		flow.night_shop_controller.selected_shop_category_index = index
 		tutorial._process(.016)
 	flow._close_night_shop_overlay()
 	tutorial.advance()
 	check(tutorial.step == 5, "Visiting all shop categories unlocks forage")
+	check_lesson_layout()
 	var old_point: Node = tutorial.forage
 	actor.global_position = old_point.global_position + Vector2(0, 80)
 	old_point.interact_with_player(actor)
@@ -134,6 +153,7 @@ func run() -> void:
 	tutorial.forage._select_option(tutorial.forage.active_options[0])
 	tutorial.advance()
 	check(tutorial.step == 6, "Actual gathering unlocks combat")
+	check_lesson_layout()
 	actor.global_position = tutorial.enemy.global_position - Vector2(100, 0)
 	actor.aim_direction = Vector2.RIGHT
 	actor._try_dash()
@@ -149,10 +169,12 @@ func run() -> void:
 	if not drops.is_empty(): drops.back().take_item_to_player(actor)
 	tutorial.advance()
 	check(tutorial.step == 7, "Dash, kill and actual loot unlock skills")
+	check_lesson_layout()
 	check(actor.skill_controller.try_activate_small(), "Small skill uses actual magic and cooldown")
 	check(actor.skill_controller.try_activate_big(), "Tutorial provision allows real ultimate activation")
 	tutorial.advance()
 	check(tutorial.step == 8, "Both skills unlock night lesson")
+	check_lesson_layout()
 	check(flow.progression_state.has_pending_menu_offer() and flow.get_blessing_points() > 0, "Night lesson supplies recipe choice and blessing point")
 	check(flow.night_event_controller.npcs.has(&"furnace"), "Actual night visitor exists in tutorial")
 	flow.handle_night_rest_interaction(&"task_book")
@@ -166,20 +188,23 @@ func run() -> void:
 	flow.night_event_controller._on_choice_selected(choices.size() - 1)
 	tutorial._update_objectives()
 	check(tutorial.ready_to_advance, "All nine lessons can finish through real systems")
+	tutorial._reset_practice()
+	await settle()
+	check(not tutorial.ready_to_advance and flow.progression_state.menu_non_drink_ids.size() == 2 and flow.get_owned_blessing_ids().is_empty(), "Night retry restores uncompleted menu and blessing objectives")
+	check(flow.night_event_controller.npcs.size() == 1, "Night retry replaces rather than duplicates visitor")
 	if OS.get_cmdline_user_args().has("--capture"):
-		tutorial.step = 0
-		tutorial._reset_practice()
-		await settle()
-		await RenderingServer.frame_post_draw
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://_artifact_work/tutorial"))
-		root.get_texture().get_image().save_png("res://_artifact_work/tutorial/lesson.png")
 		root.content_scale_size = Vector2i(1920, 1080)
 		root.size = Vector2i(1280, 720)
-		tutorial.step = 8
-		tutorial._reset_practice()
-		await settle()
-		await RenderingServer.frame_post_draw
-		root.get_texture().get_image().save_png("res://_artifact_work/tutorial/night_lesson.png")
+		for lesson in range(9):
+			tutorial.step = lesson
+			tutorial._reset_practice()
+			await settle()
+			check_lesson_layout()
+			if lesson == 7:
+				check(flow.run_status_hud.magic_panel.position.y > tutorial.panel.position.y + tutorial.panel.size.y, "Skill lesson magic meter clears instruction panel")
+			await RenderingServer.frame_post_draw
+			root.get_texture().get_image().save_png("res://_artifact_work/tutorial/lesson_%d.png" % (lesson + 1))
 	tutorial._leave()
 	await settle()
 	check(current_scene.get_script() == load("res://Scripts/UI/GameStartController.gd") and not has_meta("run_setup"), "Leaving tutorial returns to a fresh title")

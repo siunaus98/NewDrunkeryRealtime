@@ -362,6 +362,15 @@ func _ensure_regions() -> void:
 	if dune_wall_rects.is_empty():
 		_rebuild_dune_walls()
 
+func configure_tutorial_lesson(lesson: int, bounds: Rect2, is_battle: bool) -> void:
+	if not tutorial_mode:
+		return
+	map_regions = [_region(REGION_NEAR if is_battle else &"kitchen", "教学小关 %d" % (lesson + 1), bounds, battle_near_color if is_battle else kitchen_fill_color, is_battle)]
+	dune_wall_rects.clear()
+	frontline_spawn_points.clear()
+	_rebuild_dune_wall_colliders()
+	queue_redraw()
+
 func _rebuild_regions() -> void:
 	if tutorial_mode:
 		map_regions = [

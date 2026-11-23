@@ -23,20 +23,24 @@ var supply_clock := 0.0
 var completed := false
 var baseline_gold := 0
 var baseline_xp := 0
-var practice_positions: Dictionary = {}
+var facility_templates: Dictionary = {}
+var lesson_nodes: Array[Node] = []
+var lesson_bounds := Rect2()
+var lesson_progression_snapshot: Dictionary = {}
+var earned_gold := 0
+var earned_xp := 0
 
 const TITLES = ["食材箱、切台与酒桶", "烤制与研磨", "组合料理与空盘", "点单与上菜", "收益与商店", "采集补充库存", "战斗与掉落", "小技能与大技能", "菜单与夜间生活"]
-const BODIES = [
-	"WASD 移动，面向目标操作。J 取放，K 加工。\n从脆芽箱取一份 → J 放到切台 → 连按 K，切好自动回到手中。\n再取一份生脆芽 → J 投入酒桶 → 等待酿好 → J 取一杯。\n备料桌可暂存物品，空手 J 也能拾回地面物品。",
-	"把生碎金子放入烤台，自动经过微生、半熟、全熟，及时 J 取走。\n全熟后继续加热会焦糊；垃圾桶 J 可处理失误物品。\n取生晴天梅放磨台，按住 K 研磨；粗磨可提前 J 取出，再放回继续磨到细磨。\n磨完自动拿到小料盒，组合时按份使用，留意剩余份数。",
-	"练习菜：脆芽冷盘 = 切脆芽 ×2。\n用 J 把两份切芽放进组合台，空手按 K 组合。\n到盘架 J 取空净盘，再面对组合台 J 装盘。\n非酒水菜必须用净盘，酒水有自己的杯子。盘子也能收集多份半成品。",
-	"客人先点单，靠近上菜口按住 K 接单，才会出现菜谱与等餐耐心。\n按当前订单制作并 J 上菜。请将刚才的脆芽冷盘交给客人。\n上菜后手中变成脏盘：到净化池 J 放入，空手按住 J 净化。\n留意窗口编号与耐心；Tab 展开订单，L 查看当前食材来源。",
-	"上菜获得金币和经验；升级得到祝福点，去女神像选择祝福。\n商店四栏：属性强化角色；厨房升级工作设施；设施增加运输、辅助或防守能力；冷冻食材补充原料。\n靠近商人按 K，使用 Q/E 浏览四个分类，K 退出。此处不要求购买。\n设施按 K 搬起、J 放置，搬运中 L 旋转支持旋转的设施；白天移动设施会消耗魔力。",
-	"前往小地图上方的采集点，空手按住 K 搜寻。\n出现卡片后，按卡片所示的 W/A/S/D 选择一种收获。\n食材直接进入库存，再从箱子取用。中途打断会保留采集点。\n选项有时限；本练习给更长时间，超时会重新提供采集点。",
-	"前往上方练习区，轻按 L 攻击沙原禽，按住 L 后松开可重击；Space 冲刺躲避。\n击杀后掉落禽肉，靠近掉落物 J 拾取即可。\n食材路线从中区开始，再左区、最后右区，路牌和 L 提示可以查来源。\n生命归零会原地晕眩10秒，以1血复活；每晚回满生命。",
-	"U 释放小技能“抢灶步”：消耗魔力，短时加速，留意冷却；魔力自动恢复。\nI 释放大技能“稳住这锅”：加速工作，需大招能量充满。\n加工、采集、上菜与战斗都可积攒能量，教学已为本次练习充满。\n分别成功释放一次 U 和 I，体验后进入夜间。",
-	"夜间没有营业倒计时：查看菜单 → 去女神像花祝福点 → 与 ! 访客交谈。\n组合台夜间按 K 查看菜单，新增菜时选择同类替换；小菜2、主菜2、甜品1，酒水单独保留。\n本次菜单会提供一道新菜；在女神像按 J 祈福，再与烤台旁访客 J 交谈。\n正式流程：备菜后营业、到点成功；夜间库存减半、生命回满。甜品可额外招待每位客人一次，不抵消原订单。"
+# Each lesson instantiates only its required facilities, with its own map bounds.
+const LAYOUTS = [
+	{"StorageCabinetCrispSprout": Vector2(384, 384), "TestCooker": Vector2(640, 384), "FixedBarrelLeftA": Vector2(960, 384)},
+	{"StorageCabinetGoldenWheat": Vector2(384, 384), "BakeCooker": Vector2(640, 384), "StorageCabinetSunnyBerry": Vector2(896, 384), "GrindCooker": Vector2(1152, 384), "TrashBin": Vector2(1152, 768)},
+	{"TestTable": Vector2(384, 384), "TutorialPrepTable": Vector2(640, 384), "AssemblyStation": Vector2(896, 512), "PlateSink": Vector2(512, 768)},
+	{"TestServingCounter": Vector2(512, 384), "PlateSink": Vector2(896, 640)},
+	{"NightMerchant": Vector2(512, 384)}, {}, {}, {},
+	{"AssemblyStation": Vector2(384, 384), "BlessingStatue": Vector2(768, 384), "BakeCooker": Vector2(1152, 512)}
 ]
+const MAP_SIZES = [Vector2(1024, 640), Vector2(1152, 768), Vector2(1152, 768), Vector2(1024, 768), Vector2(768, 640), Vector2(1024, 768), Vector2(1152, 768), Vector2(1024, 640), Vector2(1280, 768)]
 
 func setup(scene: Node) -> void:
 	main = scene
@@ -51,40 +55,24 @@ func setup(scene: Node) -> void:
 	flow.battle_manager.reset_runtime_state()
 	flow.battle_manager.set_process(false)
 	flow.order_manager.set_process(false)
-	var keep = ["PrototypeMap", "Player", "Camera2D", "OrderHud", "RunStatusHud", "OrderManager", "StorageManager", "BattleManager", "ScarabMechanismController", "QuicksandMechanismController", "WindSandMechanismController", "LevelFlowController", "LevelRefs", "TestCooker", "BakeCooker", "GrindCooker", "AssemblyStation", "TestTable", "FixedBarrelLeftA", "TestServingCounter", "NightMerchant", "BlessingStatue", "PlateSink", "TrashBin", "StorageCabinetCrispSprout", "StorageCabinetGoldenWheat", "StorageCabinetSunnyBerry", "StorageCabinetDesertBird", "TutorialController"]
+	main.get_node("PrototypeLabel").hide()
+	var keep = ["PrototypeMap", "Player", "Camera2D", "OrderHud", "RunStatusHud", "OrderManager", "StorageManager", "BattleManager", "ScarabMechanismController", "QuicksandMechanismController", "WindSandMechanismController", "LevelFlowController", "LevelRefs", "TestCooker", "BakeCooker", "GrindCooker", "AssemblyStation", "TestTable", "FixedBarrelLeftA", "TestServingCounter", "NightMerchant", "BlessingStatue", "PlateSink", "TrashBin", "StorageCabinetCrispSprout", "StorageCabinetGoldenWheat", "StorageCabinetSunnyBerry", "TutorialController"]
 	for child: Node in main.get_children():
 		if child is Node2D and child.name not in keep:
 			child.free()
-	var positions = {"StorageCabinetCrispSprout": Vector2(320, 800), "StorageCabinetGoldenWheat": Vector2(448, 800), "StorageCabinetSunnyBerry": Vector2(576, 800), "StorageCabinetDesertBird": Vector2(704, 800), "TestCooker": Vector2(512, 1088), "BakeCooker": Vector2(768, 1088), "GrindCooker": Vector2(1024, 1088), "AssemblyStation": Vector2(768, 1312), "TestTable": Vector2(1088, 1312), "FixedBarrelLeftA": Vector2(1472, 800), "PlateSink": Vector2(1408, 1280), "TrashBin": Vector2(1600, 1280), "NightMerchant": Vector2(1216, 800), "BlessingStatue": Vector2(960, 800), "TestServingCounter": Vector2(256, 1184)}
-	for name: String in positions:
-		main.get_node(name).global_position = positions[name]
-	practice_positions = positions.duplicate()
-	var counter: Node2D = main.get_node("TestServingCounter")
-	counter.rotation = 0.0
-	counter.scale = Vector2(.3, .25)
-	counter._rebuild_slot_marker_positions()
-	counter._ensure_highlight_nodes()
-	counter._update_marker_layer()
-	main.get_node("NightMerchant").always_visible = true
-	for cabinet: Node in get_tree().get_nodes_in_group("storage_facilities"):
-		cabinet.clear_menu_filter()
-	var refs: Node = main.get_node("LevelRefs")
-	refs.station_paths.assign([NodePath("../TestCooker"), NodePath("../BakeCooker"), NodePath("../GrindCooker"), NodePath("../AssemblyStation"), NodePath("../FixedBarrelLeftA"), NodePath("../TestTable"), NodePath("../TestServingCounter")])
-	flow.run_setup_controller.station_nodes = refs.get_station_nodes()
+	for name: String in ["StorageCabinetCrispSprout", "StorageCabinetGoldenWheat", "StorageCabinetSunnyBerry", "TestCooker", "BakeCooker", "GrindCooker", "AssemblyStation", "TestTable", "FixedBarrelLeftA", "PlateSink", "TrashBin", "NightMerchant", "BlessingStatue", "TestServingCounter"]:
+		var original: Node = main.get_node(name)
+		var template := PackedScene.new()
+		template.pack(original)
+		facility_templates[name] = template
+		original.free()
 	flow.progression_state.menu_non_drink_ids.assign([Items.DISH_CRISP_PLATE_ID, Items.DISH_WHITE_PLATE_ID])
 	flow.run_context.state = Context.LevelState.WAVE_ACTIVE
 	preload("res://Scripts/Audio/AudioCue.gd").play_music(&"day")
 	flow.run_context.selected_order_group = {"day_index": 0, "tutorial": true, "map_mechanism_ids": [], "menu_dish_ids": flow.progression_state.get_menu_dish_ids()}
-	player.global_position = Vector2(896, 960)
-	player.movement_bounds = main.get_node("PrototypeMap").get_world_bounds()
-	var camera: Camera2D = main.get_node("Camera2D")
-	camera.set_physics_process(false)
-	camera.global_position = Vector2(896, 768)
-	camera.zoom = Vector2.ONE * .72
-	camera.reset_smoothing()
-	camera.force_update_scroll()
 	flow.night_shop_controller.purchase_completed.connect(func(_gold: int) -> void: record_event(&"purchase"))
 	_build_hud()
+	lesson_progression_snapshot = flow.progression_state.get_snapshot()
 	_reset_practice()
 	get_tree().paused = false
 	player.suppress_action_inputs_until_release()
@@ -95,7 +83,7 @@ func _build_hud() -> void:
 	add_child(hud)
 	panel = PanelContainer.new()
 	panel.position = Vector2(26, 20)
-	panel.size = Vector2(1868, 240)
+	panel.size = Vector2(1868, 174)
 	panel.add_theme_stylebox_override("panel", Style.panel())
 	hud.add_child(panel)
 	var margin := MarginContainer.new()
@@ -112,6 +100,7 @@ func _build_hud() -> void:
 	lesson_title = _label(29)
 	column.add_child(lesson_title)
 	lesson_body = _label(22)
+	lesson_body.custom_minimum_size.y = 66
 	column.add_child(lesson_body)
 	var actions := VBoxContainer.new()
 	actions.custom_minimum_size.x = 300
@@ -132,7 +121,7 @@ func _build_hud() -> void:
 	actions.add_child(leave)
 	for button: Node in actions.get_children():
 		if button is Button:
-			button.custom_minimum_size.y = 38
+			button.custom_minimum_size.y = 32
 			button.focus_mode = Control.FOCUS_NONE
 
 func _label(size_value: int) -> Label:
@@ -153,7 +142,7 @@ func _process(delta: float) -> void:
 		visited[flow.night_shop_controller.selected_shop_category_index] = true
 	if get_tree().paused:
 		return
-	flow.run_status_hud.day_clock.visible = false
+	_update_lesson_hud_visibility()
 	supply_clock += delta
 	if supply_clock >= 2.0:
 		supply_clock = 0.0
@@ -186,7 +175,7 @@ func _update_objectives() -> void:
 			checks = [_check("取回切好的脆芽", events.has(&"cut_taken")), _check("从酒桶取出酒水", events.has(&"drink_taken"))]
 		1:
 			if _holds(Items.RICE_ID, Items.PROCESS_STATE_ROAST_WELL): events[&"roast_taken"] = true
-			checks = [_check("取出全熟烤麦", events.has(&"roast_taken")), _check("完成一次研磨", events.has(&"grind_coarse") or events.has(&"grind_fine"))]
+			checks = [_check("取出全熟碎金子", events.has(&"roast_taken")), _check("完成一次研磨", events.has(&"grind_coarse") or events.has(&"grind_fine"))]
 		2: checks = [_check("组合并持有装盘冷菜", _holds(Items.DISH_CRISP_PLATE_ID) and bool(player.get_held_item_payload().get("uses_plate", false)))]
 		3: checks = [_check("按住K接单", events.has(&"order")), _check("交付冷菜", events.has(&"serve")), _check("净化脏盘", events.has(&"wash"))]
 		4:
@@ -204,13 +193,148 @@ func _update_objectives() -> void:
 			if flow.progression_state.menu_non_drink_ids.size() > 2: events[&"menu"] = true
 			checks = [_check("选择一道新菜", events.has(&"menu")), _check("获得一次祝福", not flow.get_owned_blessing_ids().is_empty()), _check("完成或谢绝夜间访客", flow.progression_state.events.is_complete(&"furnace"))]
 	ready_to_advance = not checks.is_empty() and checks.all(func(value: Dictionary) -> bool: return bool(value.ok))
-	checklist.text = "\n".join(checks.map(func(value: Dictionary) -> String: return ("✓ " if value.ok else "○ ") + String(value.text)))
+	checklist.text = "已完成 %d / %d" % [checks.filter(func(value: Dictionary) -> bool: return bool(value.ok)).size(), checks.size()]
 	next_button.disabled = not ready_to_advance
 	next_button.text = "教学完成 · Enter 返回标题" if step == 8 and ready_to_advance else ("下一课 → Enter" if ready_to_advance else "完成当前练习后继续")
 	lesson_title.text = "教学 %d / 9  ·  %s" % [step + 1, TITLES[step]]
-	lesson_body.text = BODIES[step]
-	if step == 4:
-		lesson_body.text = "刚才上菜获得 %d 金币、%d 经验。\n" % [int(events.get(&"earned_gold", 0)), int(events.get(&"earned_xp", 0))] + BODIES[step]
+	_update_current_instruction()
+
+func _guide(text: String, targets: Array = []) -> void:
+	lesson_body.text = text
+	highlight_nodes.clear()
+	for target in targets:
+		var node: Node = main.get_node_or_null(target) if target is String else target
+		if is_instance_valid(node): highlight_nodes.append(node)
+
+func _update_current_instruction() -> void:
+	if ready_to_advance:
+		_guide("本关完成！按 Enter 进入下一张教学地图。" if step < 8 else "教学完成！按 Enter 返回标题，开始正式冒险。")
+		return
+	match step:
+		0:
+			if not events.has(&"cut_taken"):
+				if _holds(Items.VEG_LEAF_ID):
+					_guide("面对切台按 J 放入脆芽，再连按 K 切好。切好的食材会自动回到手中。", ["TestCooker"])
+				elif main.get_node("TestCooker").has_item:
+					_guide("面对切台连按 K，完成切配。", ["TestCooker"])
+				else:
+					_guide("WASD 移动。靠近脆芽箱，空手按 J 取一份脆芽。", ["StorageCabinetCrispSprout"])
+			else:
+				var barrel: Node = main.get_node("FixedBarrelLeftA")
+				if player.is_holding_item() and not _holds(Items.VEG_LEAF_ID, Items.PROCESS_STATE_NONE):
+					_guide("按 J 放下手中的切芽，再到食材箱按 J 取一份生脆芽。", ["StorageCabinetCrispSprout"])
+				elif not player.is_holding_item() and barrel.current_drink_item_id == &"":
+					_guide("从脆芽箱按 J 取生脆芽，准备酿酒。", ["StorageCabinetCrispSprout"])
+				else:
+					_guide("把生脆芽按 J 投入酒桶。酿好后空手按 J 取酒。", ["FixedBarrelLeftA"])
+		1:
+			if not events.has(&"roast_taken"):
+				_guide("碎金子箱 J 取料 → 烤台 J 放入。等到“全熟”后及时 J 取走，久烤会焦糊。", ["BakeCooker"] if _holds(Items.RICE_ID) or main.get_node("BakeCooker").has_item else ["StorageCabinetGoldenWheat"])
+			else:
+				_guide("放下手中物品。从晴天梅箱 J 取料 → 磨台 J 放入 → 按住 K 研磨。", ["GrindCooker"] if _holds(Items.EGG_ID) or main.get_node("GrindCooker").has_item else ["StorageCabinetSunnyBerry"])
+		2:
+			var assembly: Node = main.get_node("AssemblyStation")
+			if not assembly.stored_items.is_empty() and assembly.stored_items[0].item_id == Items.DISH_CRISP_PLATE_ID:
+				_guide("成品需要净盘：到盘架 J 取空盘，再面对组合台 J 装盘。", ["AssemblyStation"] if _holds(Items.PLATE_ID) else ["PlateSink"])
+			elif assembly.stored_items.size() >= 2:
+				_guide("两份切芽已就位。空手面对组合台按 K，组合成脆芽冷盘。", ["AssemblyStation"])
+			else:
+				_guide("备料桌上各有一份切芽。J 取走，再面对组合台 J 放入；共需要两份。", ["AssemblyStation"] if player.is_holding_item() else ["TestTable", "TutorialPrepTable"])
+		3:
+			if not events.has(&"order"):
+				_guide("手中已准备好一盘冷菜。走近客人，按住 K 接单。", ["TestServingCounter"])
+			elif not events.has(&"serve"):
+				_guide("客人要一份脆芽冷盘。面对上菜口按 J 交付手中菜品。", ["TestServingCounter"])
+			else:
+				_guide("脏盘按 J 放进净化池，再空手按住 J 清洗。洗净的盘子会回到盘架。", ["PlateSink"])
+		4:
+			_guide("上菜获得 %d 金币、%d 经验。靠近商人按 K，Q/E 浏览四个分类，再按 K 退出。\n属性强化角色；厨房升级工作台；设施添置设备；冷冻食材补充原料。" % [int(events.get(&"earned_gold", 0)), int(events.get(&"earned_xp", 0))], ["NightMerchant"])
+		5:
+			if is_instance_valid(forage) and forage.state == forage.ForageState.SELECTING:
+				_guide("按卡片上的 W/A/S/D 选择一种收获，食材会直接进入库存。", [forage])
+			else:
+				_guide("靠近采集点，空手按住 K 搜寻。中途松开会中断，采集点会保留。", [forage])
+		6:
+			if not events.has(&"dash"):
+				_guide("按 Space 冲刺一次，练习躲避。", [enemy])
+			elif not events.has(&"kill"):
+				_guide("靠近沙原禽，按 L 攻击。也可按住 L 后松开，发动重击。", [enemy])
+			else:
+				_guide("靠近地上的禽肉按 J 拾取，完成一次战斗取材。", get_tree().get_nodes_in_group("loose_items"))
+		7:
+			if not events.has(&"small"):
+				_guide("按 U 释放小技能“抢灶步”，体验短时加速。技能消耗魔力，魔力会自动恢复。")
+			else:
+				_guide("按 I 释放大技能“稳住这锅”。平时通过工作和战斗积攒能量，本次已充满。")
+		8:
+			if not events.has(&"menu"):
+				_guide("夜间可以规划下一天。面对组合台按 K 打开菜单，选入一道新菜。", ["AssemblyStation"])
+			elif flow.get_owned_blessing_ids().is_empty():
+				_guide("经验升级会获得祝福点。面对女神像按 J 祈福，选择一项祝福。", ["BlessingStatue"])
+			else:
+				_guide("夜间设施会迎来访客。靠近烤台旁带 ! 的访客按 J 交谈，可接受或谢绝。", [flow.night_event_controller.npcs.get(&"furnace")])
+
+func _update_lesson_hud_visibility() -> void:
+	var status: Node = flow.run_status_hud
+	status.day_clock.visible = false
+	status.reputation_panel.visible = false
+	status.gold_panel.visible = step in [3, 4, 8]
+	status.xp_panel.visible = step in [3, 4, 8]
+	status.magic_panel.visible = step == 7
+	if step == 7:
+		status.magic_panel.position = Vector2(1804, 224)
+	status.skill_bar_root.visible = step in [6, 7]
+	status.skill_slot_small.visible = step == 7
+	status.skill_slot_big.visible = step == 7
+
+func _build_lesson_map() -> void:
+	# Free actual collision bodies and targets, rather than hiding unused props.
+	highlight_nodes.clear()
+	for node: Node in lesson_nodes:
+		if is_instance_valid(node): node.free()
+	lesson_nodes.clear()
+	var map: Node = main.get_node("PrototypeMap")
+	lesson_bounds = Rect2(Vector2(128, 128), MAP_SIZES[step])
+	map.configure_tutorial_lesson(step, lesson_bounds, step in [5, 6])
+	for name: String in LAYOUTS[step]:
+		var template_name := "TestTable" if name == "TutorialPrepTable" else name
+		var node: Node2D = facility_templates[template_name].instantiate()
+		node.name = name
+		node.position = LAYOUTS[step][name]
+		node.visible = true
+		if name == "NightMerchant": node.always_visible = true
+		if name == "TestServingCounter":
+			node.rotation = 0
+			node.scale = Vector2(.3, .25)
+		main.add_child(node)
+		lesson_nodes.append(node)
+	var refs: Node = main.get_node("LevelRefs")
+	refs.station_paths.clear()
+	for node: Node in lesson_nodes:
+		if node.has_method("reset_state"): refs.station_paths.append(NodePath("../" + String(node.name)))
+	flow.run_setup_controller.station_nodes = refs.get_station_nodes()
+	flow.serving_counter = refs.get_serving_counter()
+	player.movement_bounds = lesson_bounds
+	player.global_position = lesson_bounds.get_center() + Vector2(-64, 144)
+	var camera: Camera2D = main.get_node("Camera2D")
+	camera.set_physics_process(false)
+	camera.zoom = Vector2.ONE * (.88 if lesson_bounds.size.y > 640 else 1.05)
+	camera.global_position = lesson_bounds.get_center() - Vector2(0, 60)
+	camera.reset_smoothing()
+	camera.force_update_scroll()
+
+func _provide_prepared_sprouts() -> void:
+	for name: String in ["TestTable", "TutorialPrepTable"]:
+		var table: Node = main.get_node(name)
+		player.pick_up_item(Items.VEG_LEAF_ID, Items.get_item_texture(Items.VEG_LEAF_ID), Items.PROCESS_STATE_CUT)
+		table.receive_item_from_player(player)
+
+func _provide_plated_dish() -> void:
+	var components: Array[Dictionary] = []
+	for index in range(2):
+		components.append({"item_id": Items.VEG_LEAF_ID, "process_state": Items.PROCESS_STATE_CUT})
+	var recipe: Dictionary = Items.find_matching_recipe(components, false)
+	player.pick_up_item(Items.DISH_CRISP_PLATE_ID, Items.get_item_texture(Items.DISH_CRISP_PLATE_ID), Items.PROCESS_STATE_NONE, String(recipe.get("recipe_signature", "")), {"uses_plate": true})
 
 func _check(value: String, ok: bool) -> Dictionary:
 	return {"text": value, "ok": ok}
@@ -227,12 +351,11 @@ func advance() -> void:
 		_leave()
 		return
 	step += 1
-	var earned_gold: int = int(events.get(&"reward_gold", 0))
-	var earned_xp: int = int(events.get(&"reward_xp", 0))
-	_reset_practice()
 	if step == 4:
-		events[&"earned_gold"] = earned_gold
-		events[&"earned_xp"] = earned_xp
+		earned_gold = int(events.get(&"reward_gold", 0))
+		earned_xp = int(events.get(&"reward_xp", 0))
+	lesson_progression_snapshot = flow.progression_state.get_snapshot()
+	_reset_practice()
 
 func _reset_practice() -> void:
 	if not is_instance_valid(flow): return
@@ -246,41 +369,41 @@ func _reset_practice() -> void:
 		if is_instance_valid(target) and target.has_method("cancel_interaction"):
 			target.cancel_interaction(player)
 		player.interaction_controller._set_current_interaction_target(null)
-	main.get_node("PlateSink").reset_state()
 	if player.is_carrying_facility():
 		player.facility_carry_controller.cancel_carry()
-	for name: String in practice_positions:
-		main.get_node(name).global_position = practice_positions[name]
-	if step != 3:
-		player.clear_held_item()
-		for station: Node in [main.get_node("TestCooker"), main.get_node("BakeCooker"), main.get_node("GrindCooker"), main.get_node("AssemblyStation"), main.get_node("TestTable"), main.get_node("FixedBarrelLeftA")]:
-			station.reset_state()
-	for loose: Node in get_tree().get_nodes_in_group("loose_items"): loose.queue_free()
+	player.clear_held_item()
+	for loose: Node in get_tree().get_nodes_in_group("loose_items"): loose.free()
 	if is_instance_valid(enemy): enemy.queue_free()
 	if is_instance_valid(forage): forage.queue_free()
+	var visitors: Node = flow.night_event_controller
+	for visitor: Node in visitors.npcs.values():
+		if is_instance_valid(visitor): visitor.free()
+	visitors.npcs.clear()
+	visitors.hosts.clear()
+	visitors.spawned_night = -1
+	visitors.active_id = &""
+	flow.order_manager.clear_orders()
+	flow.progression_state.apply_snapshot(lesson_progression_snapshot)
+	_build_lesson_map()
 	events.clear()
+	if step == 4:
+		events[&"earned_gold"] = earned_gold
+		events[&"earned_xp"] = earned_xp
 	visited.clear()
 	flow.order_manager.clear_orders()
 	flow.storage_manager.fill_test_stock(20)
 	for cabinet: Node in get_tree().get_nodes_in_group("storage_facilities"):
 		cabinet.clear_menu_filter()
 	player.reset_temporary_state()
-	player.global_position = Vector2(896, 960)
+	if is_instance_valid(player.interaction_controller.hint_label):
+		player.interaction_controller.hint_generation += 1
+		player.interaction_controller.hint_label.hide()
 	player.suppress_action_inputs_until_release()
 	highlight_nodes.clear()
 	match step:
-		0: _targets(["StorageCabinetCrispSprout", "TestCooker", "FixedBarrelLeftA"])
-		1: _targets(["StorageCabinetGoldenWheat", "StorageCabinetSunnyBerry", "BakeCooker", "GrindCooker", "TrashBin"])
-		2: _targets(["TestCooker", "AssemblyStation", "PlateSink"])
+		2: _provide_prepared_sprouts()
 		3:
-			if not _holds(Items.DISH_CRISP_PLATE_ID):
-				player.clear_held_item()
-				main.get_node("AssemblyStation").reset_state()
-				for count in range(2):
-					main.get_node("AssemblyStation").stored_items.append({"item_id": Items.VEG_LEAF_ID, "process_state": Items.PROCESS_STATE_CUT, "texture": Items.get_item_texture(Items.VEG_LEAF_ID)})
-				main.get_node("AssemblyStation").interact_with_player(player)
-				main.get_node("PlateSink").rack.take_item_to_player(player)
-				main.get_node("AssemblyStation").take_item_to_player(player)
+			_provide_plated_dish()
 			var order := preload("res://Scripts/Orders/OrderGroupDefs.gd")._order("TUTORIAL", 1, Items.DISH_CRISP_PLATE_ID, 3600.0)
 			order["order_take_patience_duration"] = 3600.0
 			flow.order_manager.add_orders([order])
@@ -295,7 +418,6 @@ func _reset_practice() -> void:
 		6: _spawn_enemy()
 		7:
 			player.fill_ultimate_energy()
-			_targets(["TestCooker"])
 		8:
 			flow.run_context.state = Context.LevelState.NIGHT_REST
 			flow.progression_state.day_index = 1
@@ -306,6 +428,8 @@ func _reset_practice() -> void:
 			flow.progression_state.events.resolved = false
 			flow.night_event_controller.refresh_night()
 			_targets(["AssemblyStation", "BlessingStatue", "BakeCooker"])
+	flow.overlay_controller.hide_toast()
+	_update_lesson_hud_visibility()
 	_update_objectives()
 
 func _targets(names: Array) -> void:
@@ -319,7 +443,7 @@ func _spawn_forage() -> void:
 	forage.forage_item_ids.assign([Items.VEG_LEAF_ID, Items.RICE_ID, Items.EGG_ID])
 	forage.remove_after_attempt = true
 	main.add_child(forage)
-	forage.global_position = Vector2(640, 480)
+	forage.global_position = lesson_bounds.get_center() - Vector2(0, 128)
 	highlight_nodes.assign([forage])
 
 func _spawn_enemy() -> void:
@@ -329,7 +453,7 @@ func _spawn_enemy() -> void:
 	enemy.contact_damage = 2
 	enemy.drop_item_id = Items.MEAT_WHITE_ID
 	main.add_child(enemy)
-	enemy.global_position = Vector2(1152, 480)
+	enemy.global_position = lesson_bounds.get_center() + Vector2(192, -64)
 	enemy.setup_for_battle(Items.MEAT_WHITE_ID, main.get_node("PrototypeMap").get_region_bounds(&"near"))
 	enemy.defeated.connect(func(_actor: Node2D, id: StringName, _count: int, at: Vector2) -> void:
 		record_event(&"kill")
