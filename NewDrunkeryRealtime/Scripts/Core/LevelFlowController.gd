@@ -110,8 +110,11 @@ var customer_arrivals := preload("res://Scripts/Orders/CustomerArrivalSchedule.g
 var service_started: bool = false
 var customer_visit: int = 0
 var previous_customer_dish: StringName = &""
+var tutorial_mode: bool = false
+var day_briefing: CanvasLayer
 
 func _ready() -> void:
+	tutorial_mode = bool(Dictionary(get_tree().get_meta("run_setup", {})).get("tutorial", false))
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_resolve_scene_nodes()
 	_cache_initial_loot_slots()
@@ -125,6 +128,8 @@ func _ready() -> void:
 	_enter_night_rest()
 
 func _input(event: InputEvent) -> void:
+	if is_instance_valid(day_briefing) and day_briefing.visible:
+		return
 	if input_release_guard_active or day_transition_active:
 		get_viewport().set_input_as_handled()
 		return
@@ -333,13 +338,20 @@ func _handle_flow_input_action(action: LevelFlowInputAdapter.Action) -> void:
 				_restart_run_after_failure()
 
 func _process(delta: float) -> void:
-	if night_event_controller != null:
+	if is_instance_valid(day_briefing) and day_briefing.visible:
+		return
+	if night_event_controller != null and not tutorial_mode:
 		night_event_controller.sync_presence()
 	if input_release_guard_active:
 		input_release_guard_active = false
 		get_tree().paused = false
 		if overlay_controller != null and overlay_controller.has_method("set_transition_visible"):
 			overlay_controller.set_transition_visible(false)
+	if tutorial_mode:
+		if not get_tree().paused:
+			_update_magic(delta)
+		_update_run_status_hud()
+		return
 	if day_transition_active:
 		_update_day_transition(delta)
 		_update_run_status_hud()
@@ -633,13 +645,15 @@ func _enter_night_rest() -> void:
 	if map_node != null and map_node.has_method("refresh_environment"):
 		var map_seed := int(progression_state.modifiers.run_seed) if progression_state != null else 0
 		map_node.refresh_environment(map_seed, int(progression_state.day_index) if progression_state != null else 0)
-	if night_event_controller != null:
+	if night_event_controller != null and not tutorial_mode:
 		night_event_controller.refresh_night()
 	if run_status_hud != null and run_status_hud.has_method("set_status_visible"):
 		run_status_hud.set_status_visible(true)
 	_update_debug_label()
 
 func _enter_order_group_select() -> void:
+	if tutorial_mode:
+		return
 	if night_event_controller != null and night_event_controller.blocks_next_day():
 		if progression_state.pending_menu_offer_kind == &"event":
 			_open_menu_dish_overlay(true, "刻碑师：选择新菜", "已付款 · 不可刷新")
@@ -719,9 +733,16 @@ func _update_day_transition(delta: float) -> void:
 	if day_transition_time_remaining > 0.0:
 		return
 	day_transition_active = false
-	_enter_prepare_phase()
 	if overlay_controller != null and overlay_controller.has_method("set_transition_visible"):
 		overlay_controller.set_transition_visible(false)
+	var cards := preload("res://Scripts/Tutorial/DayBriefingDefs.gd").cards_for_day(run_context.selected_order_group)
+	if cards.is_empty():
+		_enter_prepare_phase()
+	else:
+		day_briefing = preload("res://Scripts/UI/ReadinessCards.gd").new()
+		add_child(day_briefing)
+		day_briefing.finished.connect(_enter_prepare_phase, CONNECT_ONE_SHOT)
+		day_briefing.open(cards)
 
 func _start_map_mechanisms(start_business: bool) -> void:
 	_ensure_sand_spirit_aid()
@@ -875,6 +896,11 @@ func _apply_served_dish_rewards(order_data: Dictionary) -> void:
 			var reward_field := "%s_reward" % reward_key
 			rewarded_order[reward_field] = roundi(float(rewarded_order.get(reward_field, 0)) * get_run_modifier_multiplier(reward_key))
 		progression_state.apply_order_rewards(rewarded_order)
+		if tutorial_mode:
+			var tutorial := level_refs.get_runtime_root().get_node_or_null("TutorialController")
+			if tutorial != null:
+				tutorial.events[&"reward_gold"] = int(rewarded_order.get("gold_reward", 0))
+				tutorial.events[&"reward_xp"] = int(rewarded_order.get("xp_reward", 0))
 		progression_state.events.record_income(progression_state.day_index, int(rewarded_order.get("gold_reward", 0)))
 		_update_run_status_hud()
 

@@ -40,6 +40,11 @@ func _run() -> void:
 	player._process(0.0)
 	# Exercise the actual event confirmation path with Space still held.
 	# The regression uses any active visitor, independent of the playtest batch.
+	flow.progression_state.day_index = 1
+	flow.progression_state.events.night_index = 1
+	flow.progression_state.events.event_id = &"furnace"
+	flow.progression_state.events.resolved = false
+	flow.night_event_controller.refresh_night()
 	var event_id: StringName = flow.night_event_controller._night_event_ids()[0]
 	var npc: Node = flow.night_event_controller.npcs[event_id]
 	npc.interact_with_player(player)
@@ -122,7 +127,9 @@ func _validate_pause_keyboard(main: Node) -> void:
 	main._show_pause_menu()
 	_check(paused and main.pause_menu.selected_index == 0, "Pause starts with Continue selected")
 	await _send_pause_key(KEY_W)
-	_check(main.pause_menu.selected_index == 2, "W wraps from Continue to owned blessings while paused")
+	_check(main.pause_menu.selected_index == main.pause_menu.buttons.size() - 1, "W wraps to the final pause action")
+	while main.pause_menu.selected_index != 2:
+		await _send_pause_key(KEY_W)
 	await _capture("pause_keyboard")
 	await _send_pause_key(KEY_SPACE)
 	_check(main.codex_controller.is_open() and main.codex_controller.current_category == main.codex_controller.CATEGORY_BLESSINGS, "Space activates owned blessings from the paused keyboard menu")

@@ -463,6 +463,9 @@ func _try_dash() -> void:
 	if combat_controller != null:
 		if combat_controller.try_dash(input_direction, aim_direction):
 			AudioCue.play_sfx(&"dash", -4.0)
+			var tutorial := get_parent().get_node_or_null("TutorialController")
+			if tutorial != null:
+				tutorial.record_event(&"dash")
 
 func _try_small_skill() -> void:
 	if skill_controller != null and skill_controller.has_method("try_activate_small"):
@@ -489,6 +492,9 @@ func adjust_skill_magic(amount: int) -> int:
 func on_work_completed(event: StringName) -> void:
 	if skill_controller != null:
 		skill_controller.on_work_completed(event)
+	var tutorial := get_parent().get_node_or_null("TutorialController")
+	if tutorial != null:
+		tutorial.record_event(event)
 
 func set_big_skill_variant(id: StringName) -> void:
 	if skill_controller != null:
@@ -792,6 +798,9 @@ func reduce_dash_cooldown_fraction(fraction: float) -> void:
 		combat_controller.reduce_dash_cooldown_fraction(fraction)
 
 func award_ultimate_energy(event: StringName) -> void:
+	var tutorial := get_parent().get_node_or_null("TutorialController")
+	if tutorial != null:
+		tutorial.record_event(event)
 	if skill_controller != null and is_skill_gameplay_active():
 		var amount: float = float(preload("res://Scripts/Player/UltimateEnergyRules.gd").REWARDS.get(event, 0))
 		amount *= get_run_modifier_multiplier(&"energy")

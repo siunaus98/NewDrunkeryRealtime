@@ -134,7 +134,10 @@ func _draw() -> void:
 		ribbon.append(Vector2.RIGHT.rotated(angle) * draw_outer_radius * (0.92 - 0.19 * sin(t * PI)))
 	var light := current_edge.lightened(0.6)
 	light.a = alpha_scale * (0.35 if previewing_charge else 0.85)
-	draw_colored_polygon(ribbon, light)
+	# At the first attack frame the sweep can have zero angular width.
+	# The sector above still draws; a collapsed ribbon cannot be triangulated.
+	if sweep + half_angle > 0.001:
+		draw_colored_polygon(ribbon, light)
 	draw_arc(Vector2.ZERO, draw_outer_radius * 0.78, -half_angle, sweep, 32, Color(current_edge, alpha_scale * 0.65), 2, true)
 	for index in range(5):
 		var angle := lerpf(-half_angle, sweep, float(index + 1) / 6.0)

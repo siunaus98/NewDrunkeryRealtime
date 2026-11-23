@@ -34,8 +34,15 @@ func _ready() -> void:
 		for enemy in get_tree().get_nodes_in_group("enemies"):
 			if enemy.has_method("set_movement_bounds"):
 				enemy.set_movement_bounds(world_bounds)
+	if bool(run_setup.get("tutorial", false)):
+		var tutorial := preload("res://Scripts/Tutorial/TutorialController.gd").new()
+		tutorial.name = "TutorialController"
+		add_child(tutorial)
+		tutorial.call_deferred("setup", self)
 
 func _input(event: InputEvent) -> void:
+	if level_flow_controller != null and is_instance_valid(level_flow_controller.day_briefing) and level_flow_controller.day_briefing.visible:
+		return
 	if pause_menu_visible and _is_key_pressed(event, Key.KEY_K):
 		_hide_pause_menu()
 		get_viewport().set_input_as_handled()

@@ -259,12 +259,16 @@ func _build_title_screen() -> void:
 	codex_button.pressed.connect(_open_codex)
 	codex_button.mouse_entered.connect(_set_title_menu_selection.bind(1))
 	content.add_child(codex_button)
+	var tutorial_button := _create_menu_button("教学模式")
+	tutorial_button.pressed.connect(_start_tutorial)
+	tutorial_button.mouse_entered.connect(_set_title_menu_selection.bind(2))
+	content.add_child(tutorial_button)
 
 	var exit_button := _create_menu_button("结束")
 	exit_button.pressed.connect(_quit_game)
-	exit_button.mouse_entered.connect(_set_title_menu_selection.bind(2))
+	exit_button.mouse_entered.connect(_set_title_menu_selection.bind(3))
 	content.add_child(exit_button)
-	title_menu_buttons = [start_button, codex_button, exit_button]
+	title_menu_buttons = [start_button, codex_button, tutorial_button, exit_button]
 
 	var hint := Label.new()
 	hint.text = "Space 确认"
@@ -767,6 +771,10 @@ func _start_run() -> void:
 	})
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 
+func _start_tutorial() -> void:
+	get_tree().set_meta("run_setup", {"tutorial": true, "small_skill_variant": &"rush_order", "big_skill_variant": &"steady_pot"})
+	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
+
 func _quit_game() -> void:
 	get_tree().quit()
 
@@ -783,8 +791,10 @@ func _set_title_menu_selection(index: int) -> void:
 	_refresh_title_menu_highlight()
 
 func _activate_selected_title_menu_item() -> void:
-	if selected_title_menu_index == 2:
+	if selected_title_menu_index == 3:
 		_quit_game()
+	elif selected_title_menu_index == 2:
+		_start_tutorial()
 	elif selected_title_menu_index == 1:
 		_open_codex()
 	else:

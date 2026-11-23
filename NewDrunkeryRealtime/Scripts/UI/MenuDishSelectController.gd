@@ -269,8 +269,10 @@ func _build_column(panel: Panel, column_index: int) -> void:
 func _deferred_ensure_focused_row_visible(generation: int) -> void:
 	# Wrapped recipe labels update minimum heights over multiple layout passes.
 	for frame in range(4):
+		if not is_inside_tree():
+			return
 		await get_tree().process_frame
-		if generation != refresh_generation:
+		if not is_inside_tree() or generation != refresh_generation:
 			return
 	_ensure_focused_row_visible()
 

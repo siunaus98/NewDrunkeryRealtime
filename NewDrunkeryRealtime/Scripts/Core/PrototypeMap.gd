@@ -48,8 +48,12 @@ var frontline_spawn_points: Array[Vector2] = []
 var rng := RandomNumberGenerator.new()
 var dune_wall_collider_root: Node2D
 var environment_art: Node2D
+var tutorial_mode: bool = false
 
 func _ready() -> void:
+	tutorial_mode = bool(Dictionary(get_tree().get_meta("run_setup", {})).get("tutorial", false))
+	if tutorial_mode:
+		position = Vector2.ZERO
 	rng.randomize()
 	_rebuild_regions()
 	_rebuild_dune_walls()
@@ -174,6 +178,8 @@ func get_random_point_in_region(region_id: StringName, padding: Vector2 = Vector
 	return clamp_point_to_playable(rect.get_center(), padding)
 
 func refresh_environment(seed_value: int, day_index: int) -> void:
+	if tutorial_mode:
+		return
 	if not is_instance_valid(environment_art):
 		environment_art = EnvironmentArt.new()
 		environment_art.name = "DesertEnvironment"
@@ -357,6 +363,11 @@ func _ensure_regions() -> void:
 		_rebuild_dune_walls()
 
 func _rebuild_regions() -> void:
+	if tutorial_mode:
+		map_regions = [
+			_region(REGION_NEAR, "教学采集与战斗区", Rect2(128, 128, 1536, 512), battle_near_color, true),
+			_region(&"kitchen", "教学料理区", Rect2(128, 640, 1536, 768), kitchen_fill_color, false)]
+		return
 	map_regions = [
 		_region(REGION_TOP, "顶部沙冠区", Rect2(256, 0, 1280, 320), battle_top_color, true),
 		_region(REGION_LEFT, "西侧花冠区", Rect2(0, 320, 640, 448), battle_left_color, true),
@@ -628,6 +639,8 @@ func _ranges_overlap(a_min: float, a_max: float, b_min: float, b_max: float) -> 
 
 func _rebuild_spawn_points() -> void:
 	frontline_spawn_points.clear()
+	if tutorial_mode:
+		return
 	frontline_spawn_points.append(Vector2(320, 128))
 	frontline_spawn_points.append(Vector2(2304, 128))
 	frontline_spawn_points.append(Vector2(4288, 128))
@@ -638,6 +651,8 @@ func _draw_portal_marker(center: Vector2) -> void:
 	SurfaceArt.portal(self, center, portal_marker_radius)
 
 func _draw_desert_accents() -> void:
+	if tutorial_mode:
+		return
 	var dunes := [
 		Rect2(180.0, 470.0, 820.0, 104.0),
 		Rect2(1180.0, -560.0, 760.0, 116.0),
