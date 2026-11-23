@@ -47,14 +47,10 @@ const LAYOUTS = [
 const MAP_SIZES = [Vector2(1152, 768), Vector2(1280, 768), Vector2(1152, 768), Vector2(1152, 768), Vector2(1152, 768), Vector2(1280, 768), Vector2(768, 640), Vector2(1024, 768), Vector2(1152, 768), Vector2(1024, 640), Vector2(1280, 768)]
 var highlight_clock := 0.0
 var target_label: Label
-var guide_portrait: TextureRect
-var guide_name_label: Label
 var last_guide_text := ""
 var guide_line_index := 0
 var guide_flavor_index := 0
 var guide_npc: Node2D
-var guide_dialogue_layer: CanvasLayer
-var guide_dialogue_label: Label
 
 func setup(scene: Node) -> void:
 	main = scene
@@ -107,8 +103,11 @@ func _build_hud() -> void:
 	hud.layer = 75
 	add_child(hud)
 	panel = PanelContainer.new()
-	panel.position = Vector2(420, 20)
-	panel.size = Vector2(1474, 174)
+	panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	panel.offset_left = 26
+	panel.offset_top = -220
+	panel.offset_right = -26
+	panel.offset_bottom = -20
 	panel.add_theme_stylebox_override("panel", Style.panel())
 	hud.add_child(panel)
 	var margin := MarginContainer.new()
@@ -128,8 +127,9 @@ func _build_hud() -> void:
 	lesson_body.custom_minimum_size.y = 66
 	column.add_child(lesson_body)
 	var actions := VBoxContainer.new()
-	actions.custom_minimum_size.x = 300
-	row.add_child(actions)
+	actions.custom_minimum_size = Vector2(300, 150)
+	actions.position = Vector2(1580, 20)
+	hud.add_child(actions)
 	checklist = _label(21)
 	actions.add_child(checklist)
 	next_button = Button.new()
@@ -148,16 +148,6 @@ func _build_hud() -> void:
 		if button is Button:
 			button.custom_minimum_size.y = 32
 			button.focus_mode = Control.FOCUS_NONE
-	guide_dialogue_layer = CanvasLayer.new()
-	guide_dialogue_layer.layer = 78
-	add_child(guide_dialogue_layer)
-	guide_dialogue_label = _label(22)
-	guide_dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	guide_dialogue_label.position = Vector2(420, 20)
-	guide_dialogue_label.size = Vector2(1120, 150)
-	guide_dialogue_label.visible = false
-	guide_dialogue_label.add_theme_color_override("font_color", Style.LIGHT)
-	guide_dialogue_layer.add_child(guide_dialogue_label)
 
 func _label(size_value: int) -> Label:
 	var label := Label.new()
@@ -275,15 +265,8 @@ func _guide(text: String, targets: Array = []) -> void:
 	for target in targets:
 		var node: Node = main.get_node_or_null(target) if target is String else target
 		if is_instance_valid(node): highlight_nodes.append(node)
-	if is_instance_valid(guide_npc): guide_npc.set_pickup_drop_highlight(targets.is_empty())
+	if is_instance_valid(guide_npc): guide_npc.set_pickup_drop_highlight(false)
 
-func show_guide_npc_dialogue() -> void:
-	if not is_instance_valid(guide_dialogue_label): return
-	guide_dialogue_label.text = "小沙：%s" % lesson_body.text
-	guide_dialogue_label.visible = true
-	get_tree().create_timer(3.0).timeout.connect(func() -> void:
-		if is_instance_valid(guide_dialogue_label): guide_dialogue_label.visible = false
-	)
 
 func _update_current_instruction() -> void:
 	if ready_to_advance:
@@ -352,6 +335,7 @@ func _guide_cooking() -> void:
 	elif _holds(Items.VEG_LEAF_ID): _guide("面对切台按 J 放入脆芽，准备切配。", ["TestCooker"])
 	else: _guide("WASD 移动。到脆芽箱空手按 J 取料。目标：切芽 ×2 → 组合成冷盘。", ["StorageCabinetCrispSprout"])
 
+
 func _update_lesson_hud_visibility() -> void:
 	var status: Node = flow.run_status_hud
 	status.day_clock.visible = false
@@ -360,7 +344,7 @@ func _update_lesson_hud_visibility() -> void:
 	status.xp_panel.visible = step in [1, 3, 4, 5, SHOP, NIGHT]
 	status.magic_panel.visible = step == SKILLS
 	if step == SKILLS:
-		status.magic_panel.position = Vector2(1804, 224)
+		status.magic_panel.position = Vector2(1804, 760)
 	status.skill_bar_root.visible = step in [COMBAT, SKILLS]
 	status.skill_slot_small.visible = step == SKILLS
 	status.skill_slot_big.visible = step == SKILLS

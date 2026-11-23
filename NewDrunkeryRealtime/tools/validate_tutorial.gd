@@ -40,9 +40,7 @@ func check_lesson_layout() -> void:
 	var guide: Node = main.get_node_or_null("TutorialGuideNPC")
 	check(is_instance_valid(guide) and guide.is_visible_in_tree(), "Each lesson has a visible angel guide NPC")
 	check(map.is_point_in_playable_area(guide.global_position), "Angel guide stands on the current lesson map")
-	guide.interact_with_player(actor)
-	check(tutorial.guide_dialogue_label.visible, "Guide NPC opens the current spoken instruction")
-	tutorial.guide_dialogue_label.hide()
+	check(not guide.is_in_group("pickup_drop_targets") or guide.get_interaction_button_prompt(actor) == "", "Guide is passive and speaks through the bottom tutorial bar")
 	check(map.map_regions.size() == 1 and map.get_world_bounds().size == tutorial.MAP_SIZES[tutorial.step], "Lesson has its own compact map")
 	for name: String in tutorial.facility_templates:
 		check(is_instance_valid(main.get_node_or_null(name)) == expected.has(name), "Lesson %d only instantiates needed facility: %s" % [tutorial.step + 1, name])
