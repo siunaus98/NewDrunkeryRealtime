@@ -277,7 +277,7 @@ func run() -> void:
 			await settle()
 			check_lesson_layout()
 			if lesson == tutorial.SKILLS:
-				check(flow.run_status_hud.magic_panel.position.y > tutorial.panel.position.y + tutorial.panel.size.y, "Skill lesson magic meter clears instruction panel")
+				check(not Rect2(flow.run_status_hud.magic_panel.position, flow.run_status_hud.magic_panel.size).intersects(tutorial.panel.get_global_rect()), "Skill lesson magic meter clears instruction panel")
 			await RenderingServer.frame_post_draw
 			root.get_texture().get_image().save_png("res://_artifact_work/tutorial/lesson_%d.png" % (lesson + 1))
 			if lesson == 0:
