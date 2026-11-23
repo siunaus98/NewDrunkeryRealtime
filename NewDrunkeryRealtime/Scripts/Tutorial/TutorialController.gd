@@ -27,33 +27,42 @@ var lesson_bounds := Rect2()
 var lesson_progression_snapshot: Dictionary = {}
 var earned_gold := 0
 var earned_xp := 0
+var info_page := 0
+var info_button: Button
+var actions: VBoxContainer
+var ui_highlight: Panel
+var magic_hint: Label
+var drop_stock_before := 0
 
-const TITLES = ["制作第一道料理", "盘子、接单与上菜", "烤制与研磨", "酒水与菜品", "甜品额外招待", "精英客人的逐道点单", "收益与商店", "采集补充库存", "战斗与掉落", "小技能与大技能", "菜单与夜间生活"]
+const TITLES = ["制作第一道料理", "盘子、接单与上菜", "烤制与研磨", "酒水与菜品", "甜品额外招待", "精英客人的逐道点单", "收益与商店", "采集补充库存", "战斗与掉落", "小技能与大技能", "菜单与夜间生活", "BOSS日与特殊客人"]
 const SHOP := 6
 const FORAGE := 7
 const COMBAT := 8
 const SKILLS := 9
 const NIGHT := 10
+const BOSS := 11
 const LAYOUTS = [
 	{"StorageCabinetCrispSprout": Vector2(384, 384), "TestCooker": Vector2(640, 384), "AssemblyStation": Vector2(960, 512)},
 	{"AssemblyStation": Vector2(384, 512), "PlateSink": Vector2(768, 768), "TestServingCounter": Vector2(1152, 384)},
-	{"StorageCabinetGoldenWheat": Vector2(384, 384), "BakeCooker": Vector2(640, 384), "StorageCabinetSunnyBerry": Vector2(896, 384), "GrindCooker": Vector2(1152, 384), "TrashBin": Vector2(1152, 768)},
+	{"StorageCabinetGoldenWheat": Vector2(384, 384), "BakeCooker": Vector2(640, 384), "StorageCabinetSunnyBerry": Vector2(896, 384), "GrindCooker": Vector2(1152, 384), "TutorialPrepTableA": Vector2(384, 704), "TutorialPrepTableB": Vector2(640, 704), "TrashBin": Vector2(1152, 768)},
 	{"StorageCabinetCrispSprout": Vector2(384, 384), "FixedBarrelLeftA": Vector2(704, 384), "TestServingCounter": Vector2(1088, 384), "RecipeBook": Vector2(704, 768)},
 	{"TestTable": Vector2(384, 384), "TestServingCounter": Vector2(1088, 384), "PlateSink": Vector2(768, 768), "TutorialDishTable": Vector2(384, 768)},
 	{"TestTable": Vector2(384, 384), "TutorialDishTable": Vector2(640, 384), "TutorialMainTable": Vector2(896, 384), "TestServingCounter": Vector2(1216, 512), "PlateSink": Vector2(768, 768)},
-	{"NightMerchant": Vector2(512, 384)}, {}, {}, {},
-	{"AssemblyStation": Vector2(384, 384), "BlessingStatue": Vector2(768, 384), "BakeCooker": Vector2(1152, 512)}
+	{"NightMerchant": Vector2(512, 384)}, {}, {},
+	{"StorageCabinetCrispSprout": Vector2(384, 384), "TestCooker": Vector2(640, 384), "TestTable": Vector2(896, 384)},
+	{"BlessingStatue": Vector2(640, 384), "BakeCooker": Vector2(1024, 384)},
+	{}
 ]
-const MAP_SIZES = [Vector2(1152, 768), Vector2(1280, 768), Vector2(1152, 768), Vector2(1152, 768), Vector2(1152, 768), Vector2(1280, 768), Vector2(768, 640), Vector2(1024, 768), Vector2(1152, 768), Vector2(1024, 640), Vector2(1280, 768)]
+const MAP_SIZES = [Vector2(1152, 768), Vector2(1280, 768), Vector2(1408, 896), Vector2(1152, 768), Vector2(1152, 768), Vector2(1280, 768), Vector2(768, 640), Vector2(1024, 768), Vector2(1152, 768), Vector2(1152, 768), Vector2(1280, 768), Vector2(1280, 768)]
+const GUIDE_POSITIONS = [Vector2(1088, 704), Vector2(1088, 704), Vector2(1280, 832), Vector2(960, 704), Vector2(960, 704), Vector2(1152, 704), Vector2(640, 512), Vector2(896, 640), Vector2(1024, 640), Vector2(896, 768), Vector2(1152, 640), Vector2(1152, 704)]
 var highlight_clock := 0.0
 var target_label: Label
 var last_guide_text := ""
-var guide_line_index := 0
-var guide_flavor_index := 0
 var guide_npc: Node2D
 
 func setup(scene: Node) -> void:
 	main = scene
+	step = clampi(int(main.run_setup.get("tutorial_step", 0)), 0, BOSS)
 	flow = main.get_node("LevelFlowController")
 	player = main.get_node("Player")
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -105,7 +114,7 @@ func _build_hud() -> void:
 	panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
 	panel.offset_left = 26
-	panel.offset_top = -220
+	panel.offset_top = -174
 	panel.offset_right = -26
 	panel.offset_bottom = -20
 	panel.add_theme_stylebox_override("panel", Style.panel())
@@ -126,7 +135,13 @@ func _build_hud() -> void:
 	lesson_body = _label(22)
 	lesson_body.custom_minimum_size.y = 66
 	column.add_child(lesson_body)
-	var actions := VBoxContainer.new()
+	info_button = Button.new()
+	info_button.text = "听下一句 →"
+	info_button.focus_mode = Control.FOCUS_NONE
+	info_button.pressed.connect(_next_info_page)
+	info_button.visible = false
+	column.add_child(info_button)
+	actions = VBoxContainer.new()
 	actions.custom_minimum_size = Vector2(300, 150)
 	actions.position = Vector2(1580, 20)
 	hud.add_child(actions)
@@ -141,13 +156,33 @@ func _build_hud() -> void:
 	retry.pressed.connect(_reset_practice)
 	actions.add_child(retry)
 	var leave := Button.new()
-	leave.text = "返回标题"
+	leave.text = "退出 · 教学选关"
 	leave.pressed.connect(_leave)
 	actions.add_child(leave)
 	for button: Node in actions.get_children():
 		if button is Button:
 			button.custom_minimum_size.y = 32
 			button.focus_mode = Control.FOCUS_NONE
+
+	ui_highlight = Panel.new()
+	ui_highlight.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var highlight_style := StyleBoxFlat.new()
+	highlight_style.bg_color = Color(1, .86, .3, .06)
+	highlight_style.border_color = Color("ffe199")
+	highlight_style.set_border_width_all(4)
+	highlight_style.set_corner_radius_all(12)
+	ui_highlight.add_theme_stylebox_override("panel", highlight_style)
+	hud.add_child(ui_highlight)
+	magic_hint = _label(22)
+	magic_hint.text = "魔力 · U 消耗 / 自动恢复"
+	magic_hint.position = Vector2(1460, 590)
+	magic_hint.size = Vector2(420, 34)
+	magic_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	hud.add_child(magic_hint)
+
+func _next_info_page() -> void:
+	info_page += 1
+	_update_objectives()
 
 func _label(size_value: int) -> Label:
 	var label := Label.new()
@@ -158,12 +193,20 @@ func _label(size_value: int) -> Label:
 
 func record_event(id: StringName) -> void:
 	events[id] = true
+	if step == SKILLS and id == &"cut":
+		if not events.has(&"skill_cut_before") and not player.skill_controller.is_big_skill_buff_active():
+			events[&"skill_cut_before"] = true
+		elif events.has(&"skill_cut_before") and player.skill_controller.is_big_skill_buff_active():
+			events[&"skill_cut_after"] = true
 	if id == &"order": _on_order_taken()
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(flow) or completed:
 		return
 	panel.visible = not get_tree().paused
+	actions.visible = panel.visible
+	ui_highlight.visible = panel.visible and step == SKILLS
+	magic_hint.visible = ui_highlight.visible
 	target_label.visible = panel.visible and not highlight_nodes.is_empty()
 	highlight_clock += delta
 	if step == 3 and main.codex_controller.is_open(): events[&"dish_book"] = true
@@ -179,6 +222,7 @@ func _process(delta: float) -> void:
 			if flow.storage_manager.get_stock(id) < 6:
 				flow.storage_manager.add_stock(id, 6)
 	# Record this before hiding the panel, as the shop itself pauses the world.
+
 	_update_objectives()
 	_update_highlights()
 	queue_redraw()
@@ -189,7 +233,10 @@ func _input(_event: InputEvent) -> void:
 	if step == SHOP and flow.run_context.state == Context.LevelState.NIGHT_SHOP:
 		visited[flow.night_shop_controller.selected_shop_category_index] = true
 	if not get_tree().paused and _event is InputEventKey and _event.pressed and not _event.echo:
-		if _event.keycode == KEY_ENTER and ready_to_advance:
+		if _event.keycode == KEY_ENTER and info_button.visible:
+			get_viewport().set_input_as_handled()
+			_next_info_page()
+		elif _event.keycode == KEY_ENTER and ready_to_advance:
 			get_viewport().set_input_as_handled()
 			advance()
 		elif _event.keycode == KEY_F5:
@@ -203,8 +250,10 @@ func _record_service(data: Dictionary) -> void:
 		earned_xp = int(data.get("xp_reward", 0))
 
 func _on_order_taken() -> void:
-	if step == 4 and flow.order_manager.customers.has("slot:1"):
-		flow.order_manager.customers["slot:1"]["time_remaining"] = 1800.0
+	if step in [4, 5] and flow.order_manager.customers.has("slot:1"):
+		var customer: Dictionary = flow.order_manager.customers["slot:1"]
+		customer["time_remaining"] = float(customer.patience_duration) * .45
+		flow.order_manager._publish_customer_progress("slot:1")
 
 func _record_dessert(_data: Dictionary) -> void:
 	record_event(&"dessert")
@@ -231,31 +280,29 @@ func _update_objectives() -> void:
 		FORAGE:
 			checks = [_check("采集入库", events.has(&"forage"))]
 			if not events.has(&"forage") and (not is_instance_valid(forage) or forage.is_queued_for_deletion()): _spawn_forage()
-		COMBAT: checks = [_check("冲刺", events.has(&"dash")), _check("击败沙原禽", events.has(&"kill")), _check("拾取禽肉", events.has(&"kill") and _holds(Items.MEAT_WHITE_ID))]
+		COMBAT: checks = [_check("冲刺", events.has(&"dash")), _check("击败沙原禽", events.has(&"kill")), _check("触碰掉落入库", events.has(&"kill") and flow.storage_manager.get_stock(Items.MEAT_WHITE_ID) > drop_stock_before)]
 		SKILLS:
 			if player.skill_controller.get_small_skill_remaining() > 0: events[&"small"] = true
 			if player.skill_controller.is_big_skill_buff_active(): events[&"big"] = true
-			checks = [_check("小技能", events.has(&"small")), _check("大技能", events.has(&"big"))]
+			checks = [_check("普通切配", events.has(&"skill_cut_before")), _check("小技能", events.has(&"small")), _check("大招切配", events.has(&"skill_cut_after"))]
 		NIGHT:
-			if flow.progression_state.menu_non_drink_ids.size() > 2: events[&"menu"] = true
-			checks = [_check("选新菜", events.has(&"menu")), _check("祝福", not flow.get_owned_blessing_ids().is_empty()), _check("访客", flow.progression_state.events.is_complete(&"furnace"))]
+			checks = [_check("了解夜间", info_page > 0), _check("祝福", not flow.get_owned_blessing_ids().is_empty()), _check("访客", flow.progression_state.events.is_complete(&"furnace"))]
+		BOSS: checks = [_check("了解 BOSS 和特殊客人", info_page >= 3)]
 	if step == 1 and _holds(Items.DISH_CRISP_PLATE_ID): events[&"plated"] = true
 	ready_to_advance = not checks.is_empty() and checks.all(func(value: Dictionary) -> bool: return bool(value.ok))
 	checklist.text = "已完成 %d / %d" % [checks.filter(func(value: Dictionary) -> bool: return bool(value.ok)).size(), checks.size()]
-	next_button.disabled = not ready_to_advance
-	next_button.text = "教学完成 · Enter 返回标题" if step == NIGHT and ready_to_advance else ("下一课 → Enter" if ready_to_advance else "完成当前练习后继续")
-	next_button.text = "直接进入下一关 →" if not ready_to_advance else ("教学完成 · 返回标题" if step == NIGHT else "进入下一关 →")
+	next_button.disabled = false
+	next_button.text = "直接进入下一关 →" if not ready_to_advance else ("教学完成 · 返回选关" if step == BOSS else "进入下一关 →")
+	if step == BOSS and not ready_to_advance: next_button.text = "返回教学选关"
 	lesson_title.text = "教学 %d / %d  ·  %s" % [step + 1, TITLES.size(), TITLES[step]]
+	info_button.visible = step == BOSS and info_page < 3 or step == NIGHT and info_page == 0
 	_update_current_instruction()
+	panel.offset_top = -210 if info_button.visible else -174
 
 func _guide(text: String, targets: Array = []) -> void:
 	if text != last_guide_text:
-		guide_line_index += 1
 		last_guide_text = text
-		var leads := ["先别急着把厨房炸了，", "好，轮到你出手了——", "这一步很关键，别让食材等到长草：", "小沙友情提醒："]
-		var lead: String = leads[guide_flavor_index % leads.size()]
-		guide_flavor_index += 1
-		lesson_body.text = text
+		lesson_body.text = "小沙：" + text
 		if is_instance_valid(guide_npc): guide_npc.set_current_hint(text)
 	for node: Node2D in highlight_nodes:
 		if is_instance_valid(node):
@@ -269,13 +316,13 @@ func _guide(text: String, targets: Array = []) -> void:
 
 
 func _update_current_instruction() -> void:
-	if ready_to_advance:
-		_guide("料理做好了，先留在组合台上。按 Enter 到下一关学习装盘和上菜。" if step == 0 else ("本关完成！按 Enter 进入下一张教学地图。" if step < NIGHT else "教学完成！按 Enter 返回标题，开始正式冒险。"))
+	if ready_to_advance and step != BOSS:
+		_guide("料理做好了，先留在组合台上。按 Enter 到下一关学习装盘和上菜。" if step == 0 else ("本关完成！按 Enter 进入下一张教学地图。" if step < BOSS else "教学完成！按 Enter 返回标题，开始正式冒险。"))
 		return
 	match step:
 		0: _guide_cooking()
 		1:
-			if not events.has(&"order"): _guide("先到地图外侧的客人桌前，按住 K 接单，查看客人想要的菜。", ["TestServingCounter"])
+			if not events.has(&"order"): _guide("营业结束前客人会持续到来，一次来一位。先到外侧桌前按住 K 接单，听听这一位想吃什么。", ["TestServingCounter"])
 			elif _dish_ready():
 				if _holds(Items.PLATE_ID): _guide("面对组合台按 J，将上一关做好的脆芽冷盘装进盘子。", ["AssemblyStation"])
 				else: _guide("非酒水菜需要净盘。走到左侧盘架，空手按 J 取一个净盘。", [main.get_node("PlateSink").rack])
@@ -283,10 +330,12 @@ func _update_current_instruction() -> void:
 			else: _guide("脏盘 J 放入右侧净化池，再空手按住 J 清洗。净盘会回到左侧盘架。", ["PlateSink"])
 		2:
 			if not events.has(&"roast_taken"):
-				_guide("碎金子箱 J 取料 → 烤台 J 放入。等到“全熟”后及时 J 取走，久烤会焦糊。", ["BakeCooker"] if _holds(Items.RICE_ID) or main.get_node("BakeCooker").has_item else ["StorageCabinetGoldenWheat"])
+				_guide("烤条旁 1=微生、2=半熟、3=全熟；第4段走完就烤糊了！箱子 J 取碎金子放烤台，等全熟 J 取走。", ["BakeCooker"] if _holds(Items.RICE_ID) or main.get_node("BakeCooker").has_item else ["StorageCabinetGoldenWheat"])
+			elif _holds(Items.RICE_ID):
+				_guide("烤料拿稳啦。面对空桌按 J 暂存，腾出双手再去研磨。", ["TutorialPrepTableA"] if not main.get_node("TutorialPrepTableA").has_item else ["TutorialPrepTableB"])
 			elif main.get_node("GrindCooker").has_item:
-				_guide("面对磨台按住 K 研磨；完成后按 J 主动取走小料盒，每盒可分多份使用。", ["GrindCooker"])
-			else: _guide("放下手中物品。从晴天梅箱 J 取料，再面对磨台 J 放入。", ["GrindCooker"] if _holds(Items.EGG_ID) else ["StorageCabinetSunnyBerry"])
+				_guide("磨条 1=粗磨、2=细磨。按住 K，粗磨可提前 J 取出，继续磨到细磨也可；取走小料盒后放到空桌。", ["GrindCooker"])
+			else: _guide("先把烤好的食材 J 放到空桌。晴天梅箱 J 取料，再 J 放到磨台；研磨也有粗磨、细磨两档。", ["GrindCooker"] if _holds(Items.EGG_ID) else ["StorageCabinetSunnyBerry"])
 		3:
 			if int(events.get(&"courses", 0)) > 0: _guide("酒水自带杯子，不用净盘。面对菜谱书按 K 查看菜品分类与配方，Esc 返回。", ["RecipeBook"])
 			elif not events.has(&"order"): _guide("本关客人想喝绿洲酒。先走近上菜口按住 K 接单。", ["TestServingCounter"])
@@ -301,28 +350,35 @@ func _update_current_instruction() -> void:
 			elif _holds(Items.DIRTY_PLATE_ID): _guide("甜品没有抵消原订单，客人仍在等冷盘。先把脏盘 J 放入净化池腾出双手。", ["PlateSink"])
 			else: _guide("取另一张桌上的脆芽冷盘，再 J 交给客人，完成原订单。", ["TestServingCounter"] if _holds(Items.DISH_CRISP_PLATE_ID) else ["TutorialDishTable"])
 		5:
-			if not events.has(&"order"): _guide("金色标识是精英客人。按住 K 接单；多道菜共享耐心，一次只显示当前一道。", ["TestServingCounter"])
+			if not events.has(&"order"): _guide("精英客人一次点多道菜，共享耐心。先按住 K 接单；本关预扣部分耐心，观察上酒和上菜如何回耐心。", ["TestServingCounter"])
 			elif _holds(Items.DIRTY_PLATE_ID): _guide("上菜后会恢复部分耐心。先 J 把脏盘放进净化池，再取下一道菜。", ["PlateSink"])
 			else:
 				var course: int = int(events.get(&"courses", 0))
 				var ids = [Items.DRINK_OASIS_WINE_ID, Items.DISH_CRISP_PLATE_ID, Items.DISH_WHITE_PLATE_ID]
 				var tables = ["TestTable", "TutorialDishTable", "TutorialMainTable"]
-				_guide("按“酒水 → 小菜 → 主菜”依次交付。当前：%s；留意订单上的剩余道数。" % Items.get_item_display_name(ids[course]), ["TestServingCounter"] if _holds(ids[course]) else [tables[course]])
-		SHOP: _guide("第一次上菜获得 %d 金币、%d 经验。商人 K 打开商店，Q/E 浏览四栏，K 退出。\n属性强化角色；厨房升级工作台；设施添置设备；冷冻食材补充原料。" % [earned_gold, earned_xp], ["NightMerchant"])
+				_guide("按“酒水 → 小菜 → 主菜”依次交付。当前：%s；留意剩余道数与耐心：酒水回10%%，菜品回20%%。" % Items.get_item_display_name(ids[course]), ["TestServingCounter"] if _holds(ids[course]) else [tables[course]])
+		SHOP:
+			var reward_text := "第一次上菜获得 %d 金币、%d 经验。" % [earned_gold, earned_xp] if earned_gold > 0 else "上菜赚金币和经验；金币用来购物，经验用来成长。"
+			_guide(reward_text + "商人 K 打开商店，Q/E 浏览四栏，K 退出。\n属性强化角色；厨房升级工作台；设施添置设备；冷冻食材补充原料。", ["NightMerchant"])
 		FORAGE:
-			if is_instance_valid(forage) and forage.state == forage.ForageState.SELECTING: _guide("按卡片上的 W/A/S/D 选择一种收获，食材会直接进入库存。", [forage])
+			if is_instance_valid(forage) and forage.state == forage.ForageState.SELECTING: _guide("选项围着你：上 W、左 A、下 S、右 D。按对应键选一种，食材直接入库。")
 			else: _guide("靠近采集点，空手按住 K 搜寻。中途松开会中断，采集点会保留。", [forage])
 		COMBAT:
 			if not events.has(&"dash"): _guide("按 Space 冲刺一次，练习躲避。", [enemy])
 			elif not events.has(&"kill"): _guide("靠近沙原禽，按 L 攻击。也可按住 L 后松开，发动重击。", [enemy])
-			else: _guide("靠近地上的禽肉按 J 拾取，完成一次战斗取材。", get_tree().get_nodes_in_group("loose_items"))
-		SKILLS:
-			if not events.has(&"small"): _guide("按 U 释放小技能“抢灶步”，体验短时加速。技能消耗魔力，魔力会自动恢复。")
-			else: _guide("按 I 释放大技能“稳住这锅”。平时通过工作和战斗积攒能量，本次已充满。")
+			else: _guide("走过去触碰禽肉就自动进入库存，不用按 J，也不用空出双手。", get_tree().get_nodes_in_group("battle_drops"))
+		SKILLS: _guide_skills()
 		NIGHT:
-			if not events.has(&"menu"): _guide("夜间可以规划下一天。面对组合台按 K 打开菜单，选入一道新菜。", ["AssemblyStation"])
-			elif flow.get_owned_blessing_ids().is_empty(): _guide("经验升级会获得祝福点。面对女神像按 J 祈福，选择一项祝福。", ["BlessingStatue"])
-			else: _guide("夜间设施会迎来访客。靠近烤台旁带 ! 的访客按 J 交谈，可接受或谢绝。", [flow.night_event_controller.npcs.get(&"furnace")])
+			if info_page == 0: _guide("营业结束后才会选择下一天的新菜，今天记住流程就好，不用实操。夜间还可选祝福、逛商店、遇访客。")
+			elif flow.get_owned_blessing_ids().is_empty(): _guide("面对女神像按 J 祈福。祝福不合心意可按 L 刷新当前选项；刷新次数整局共享，别一口气花光哦。", ["BlessingStatue"])
+			else: _guide("烤台旁有访客啦。靠近带 ! 的小家伙按 J 交谈，接受或谢绝都可以。梵倪拉前辈说，收工也得看人情。", [flow.night_event_controller.npcs.get(&"furnace")])
+		BOSS:
+			var lines = [
+				"BOSS 日会遇到强大的 BOSS 敌人：攻击有预警，躲开再找空隙输出，击败后带回专属食材。",
+				"营业结束会迎来 BOSS 客人：酒水→小菜→主菜逐道上，可能需要 BOSS 食材。全部上完才能收工。",
+				"BOSS 客人有独立耐心，超时不会直接离开，而会持续扣声望；普通上菜的回耐心规则不适用。别让厨房等到天荒地老。",
+				"记住两件事：战斗看预警，厨房看当前订单。每个 BOSS 当日营业前还有专属说明卡。准备好就去正式营业吧！"]
+			_guide(lines[mini(info_page, lines.size() - 1)])
 
 func _guide_cooking() -> void:
 	var station: Node = main.get_node("TestCooker")
@@ -336,15 +392,40 @@ func _guide_cooking() -> void:
 	else: _guide("WASD 移动。到脆芽箱空手按 J 取料。目标：切芽 ×2 → 组合成冷盘。", ["StorageCabinetCrispSprout"])
 
 
+func _guide_skills() -> void:
+	if info_page == 0:
+		info_button.visible = true
+		_guide("小技能 U：短冷却的小功能，消耗魔力；大技能 I：效果强力，靠工作和战斗积攒能量。来试试同一份食材！")
+		return
+	if not events.has(&"skill_cut_before"):
+		_guide("先不开大招切一份脆芽，感受普通速度。箱子 J 取料→切台 J 放入→连按 K。", ["TestCooker"] if player.is_holding_item() or main.get_node("TestCooker").has_item else ["StorageCabinetCrispSprout"])
+	elif not events.has(&"small"):
+		_guide("按 U 试试“抢灶步”的短时加速。留意右侧发光的魔力条：消耗后会自动恢复。")
+	elif main.get_node("TestCooker").has_item and not main.get_node("TestCooker").processing_active or _holds(Items.VEG_LEAF_ID, Items.PROCESS_STATE_CUT):
+		_guide("先 J 取走第一次的切芽，J 放到旁边空桌，再准备第二份生脆芽。", ["TestTable"] if player.is_holding_item() else ["TestCooker"])
+	elif not main.get_node("TestCooker").has_item:
+		_guide("再取一份生脆芽 J 放切台。准备好再开大招，就不会把强力时间花在找菜上啦。", ["TestCooker"] if _holds(Items.VEG_LEAF_ID) else ["StorageCabinetCrispSprout"])
+	elif not player.skill_controller.is_big_skill_buff_active():
+		player.fill_ultimate_energy()
+		_guide("按 I 开“稳住这锅”，再连按 K 切第二份。对比第一次需要的按键次数。")
+	else:
+		_guide("趁大招生效，面对切台连按 K！同样食材更快完成，这就是强力效果。", ["TestCooker"])
+
 func _update_lesson_hud_visibility() -> void:
 	var status: Node = flow.run_status_hud
 	status.day_clock.visible = false
+	status.gold_panel.position.y = 814
+	status.xp_panel.position.y = 798
+	for slot: Control in [status.action_slot_dash, status.skill_slot_small, status.skill_slot_big]: slot.position.y = 770
 	status.reputation_panel.visible = false
 	status.gold_panel.visible = step in [1, 3, 4, 5, SHOP, NIGHT]
 	status.xp_panel.visible = step in [1, 3, 4, 5, SHOP, NIGHT]
 	status.magic_panel.visible = step == SKILLS
 	if step == SKILLS:
-		status.magic_panel.position = Vector2(1804, 760)
+		status.magic_panel.position = Vector2(1804, 222)
+		ui_highlight.position = status.magic_panel.position - Vector2(8, 8)
+		ui_highlight.size = status.magic_panel.size + Vector2(16, 16)
+		ui_highlight.modulate.a = .72 + .28 * sin(highlight_clock * 4)
 	status.skill_bar_root.visible = step in [COMBAT, SKILLS]
 	status.skill_slot_small.visible = step == SKILLS
 	status.skill_slot_big.visible = step == SKILLS
@@ -363,10 +444,10 @@ func _build_lesson_map() -> void:
 	guide_npc = preload("res://Scripts/Tutorial/TutorialGuideNPC.gd").new()
 	guide_npc.name = "TutorialGuideNPC"
 	guide_npc.tutorial = self
-	guide_npc.position = lesson_bounds.position + Vector2(lesson_bounds.size.x - 110, lesson_bounds.size.y - 115)
+	guide_npc.position = Vector2.ZERO
 	main.add_child(guide_npc)
 	for name: String in LAYOUTS[step]:
-		var template_name := "TestTable" if name in ["TutorialDishTable", "TutorialMainTable"] else name
+		var template_name := "TestTable" if name in ["TutorialDishTable", "TutorialMainTable", "TutorialPrepTableA", "TutorialPrepTableB"] else name
 		var node: Node2D = preload("res://Scripts/Tutorial/TutorialRecipeBook.gd").new() if name == "RecipeBook" else facility_templates[template_name].instantiate()
 		node.name = name
 		node.position = LAYOUTS[step][name]
@@ -378,6 +459,7 @@ func _build_lesson_map() -> void:
 			node.scale = Vector2(.44, .25)
 		main.add_child(node)
 		lesson_nodes.append(node)
+	_place_guide(map)
 	var refs: Node = main.get_node("LevelRefs")
 	refs.station_paths.clear()
 	for node: Node in lesson_nodes:
@@ -388,10 +470,26 @@ func _build_lesson_map() -> void:
 	player.global_position = lesson_bounds.get_center() + Vector2(-64, 144)
 	var camera: Camera2D = main.get_node("Camera2D")
 	camera.set_physics_process(false)
-	camera.zoom = Vector2.ONE * (.88 if lesson_bounds.size.y > 640 else 1.05)
-	camera.global_position = lesson_bounds.get_center() - Vector2(100 if LAYOUTS[step].has("TestServingCounter") else 0, 60)
+	camera.zoom = Vector2.ONE * minf(1150.0 / lesson_bounds.size.x, 650.0 / lesson_bounds.size.y)
+	camera.global_position = lesson_bounds.get_center() + Vector2(-100 if LAYOUTS[step].has("TestServingCounter") else 0, 75)
 	camera.reset_smoothing()
 	camera.force_update_scroll()
+
+func _place_guide(map: Node2D) -> void:
+	var candidates: Array[Vector2] = []
+	var tile: Vector2 = map.tile_size
+	for y in range(int(lesson_bounds.position.y / tile.y), int(lesson_bounds.end.y / tile.y)):
+		for x in range(int(lesson_bounds.position.x / tile.x), int(lesson_bounds.end.x / tile.x)):
+			var center := map.to_global((Vector2(x, y) + Vector2.ONE * .5) * tile)
+			var clear := true
+			for prop: Node2D in lesson_nodes:
+				var size := Vector2(128, 128)
+				if prop.has_method("get_layout_footprint"): size = Vector2(prop.get_layout_footprint()) * tile
+				if Rect2(prop.global_position - size * .5, size).grow(60).has_point(center): clear = false
+			if clear: candidates.append(center)
+	var preferred: Vector2 = GUIDE_POSITIONS[step]
+	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_squared_to(preferred) < b.distance_squared_to(preferred))
+	guide_npc.global_position = candidates[0] if not candidates.is_empty() else map.to_global((Vector2(map.get_cell_for_point(lesson_bounds.get_center())) + Vector2.ONE * .5) * tile)
 
 func _prepared_dish(id: StringName) -> Dictionary:
 	var components: Array[Dictionary] = []
@@ -442,7 +540,7 @@ func advance() -> void:
 	_update_objectives()
 	if not ready_to_advance:
 		return
-	if step == NIGHT:
+	if step == BOSS:
 		completed = true
 		_leave()
 		return
@@ -451,7 +549,7 @@ func advance() -> void:
 	_reset_practice()
 
 func _skip_to_next() -> void:
-	if step == NIGHT:
+	if step == BOSS:
 		_leave()
 		return
 	step += 1
@@ -474,6 +572,7 @@ func _reset_practice() -> void:
 		player.facility_carry_controller.cancel_carry()
 	player.clear_held_item()
 	for loose: Node in get_tree().get_nodes_in_group("loose_items"): loose.free()
+	for drop: Node in get_tree().get_nodes_in_group("battle_drops"): drop.free()
 	if is_instance_valid(enemy): enemy.queue_free()
 	if is_instance_valid(forage): forage.queue_free()
 	var visitors: Node = flow.night_event_controller
@@ -487,6 +586,8 @@ func _reset_practice() -> void:
 	flow.progression_state.apply_snapshot(lesson_progression_snapshot)
 	_build_lesson_map()
 	events.clear()
+	info_page = 0
+	last_guide_text = ""
 	visited.clear()
 	flow.order_manager.clear_orders()
 	flow.storage_manager.fill_test_stock(20)
@@ -507,7 +608,6 @@ func _reset_practice() -> void:
 		4:
 			_add_customer([Items.DISH_CRISP_PLATE_ID])
 			_stage_dish("TestTable", Items.DISH_QINGMEI_SWEET_BOWL_ID)
-			flow.order_manager.customers["slot:1"]["time_remaining"] = 1800.0
 		5:
 			_add_customer([Items.DRINK_OASIS_WINE_ID, Items.DISH_CRISP_PLATE_ID, Items.DISH_WHITE_PLATE_ID], true)
 			_stage_dish("TestTable", Items.DRINK_OASIS_WINE_ID)
@@ -518,18 +618,20 @@ func _reset_practice() -> void:
 			preload("res://Scripts/Audio/AudioCue.gd").play_music(&"night")
 		FORAGE: _spawn_forage()
 		COMBAT: _spawn_enemy()
-		SKILLS: player.fill_ultimate_energy()
+		SKILLS:
+			player.fill_ultimate_energy()
 		NIGHT:
 			flow.run_context.state = Context.LevelState.NIGHT_REST
 			flow.progression_state.day_index = 1
 			flow.progression_state.blessing_points = 1
-			flow.progression_state.create_next_non_drink_offer()
 			flow.progression_state.events.night_index = 1
 			flow.progression_state.events.event_id = &"furnace"
 			flow.progression_state.events.resolved = false
 			flow.night_event_controller.refresh_night()
+		BOSS: pass
 	flow.overlay_controller.hide_toast()
 	_update_lesson_hud_visibility()
+
 	_update_objectives()
 	_update_highlights()
 
@@ -544,6 +646,7 @@ func _spawn_forage() -> void:
 	highlight_nodes.assign([forage])
 
 func _spawn_enemy() -> void:
+	drop_stock_before = flow.storage_manager.get_stock(Items.MEAT_WHITE_ID)
 	enemy = load("res://Scenes/Enemies/chicken_enemy.tscn").instantiate()
 	enemy.max_health = 130
 	enemy.move_speed = 75
@@ -554,10 +657,12 @@ func _spawn_enemy() -> void:
 	enemy.setup_for_battle(Items.MEAT_WHITE_ID, main.get_node("PrototypeMap").get_region_bounds(&"near"))
 	enemy.defeated.connect(func(_actor: Node2D, id: StringName, _count: int, at: Vector2) -> void:
 		record_event(&"kill")
-		var item: Node2D = load("res://Scenes/Restaurant/loose_item.tscn").instantiate()
+		var item: Node2D = load("res://Scenes/Battle/battle_drop.tscn").instantiate()
 		main.add_child(item)
 		item.global_position = at
-		item.setup_item(id, Items.get_item_texture(id), Items.PROCESS_STATE_NONE)
+		item.max_lifetime = 3600
+		item.lifetime_remaining = 3600
+		item.setup_drop(id, Vector2.ZERO, lesson_bounds)
 	)
 	highlight_nodes.assign([enemy])
 
@@ -572,4 +677,4 @@ func _draw() -> void:
 
 func _leave() -> void:
 	get_tree().paused = false
-	get_tree().change_scene_to_file("res://Scenes/Main/game_start.tscn")
+	get_tree().change_scene_to_file("res://Scenes/Main/tutorial_select.tscn")

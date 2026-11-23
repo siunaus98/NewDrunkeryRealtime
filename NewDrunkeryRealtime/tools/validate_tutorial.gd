@@ -40,6 +40,12 @@ func check_lesson_layout() -> void:
 	var guide: Node = main.get_node_or_null("TutorialGuideNPC")
 	check(is_instance_valid(guide) and guide.is_visible_in_tree(), "Each lesson has a visible angel guide NPC")
 	check(map.is_point_in_playable_area(guide.global_position), "Angel guide stands on the current lesson map")
+	var cell_center: Vector2 = map.to_global((Vector2(map.get_cell_for_point(guide.global_position)) + Vector2(.5, .5)) * map.tile_size)
+	check(guide.global_position.is_equal_approx(cell_center), "Angel stands at tile center")
+	for prop: Node2D in tutorial.lesson_nodes:
+		var footprint := Vector2(128, 128)
+		if prop.has_method("get_layout_footprint"): footprint = Vector2(prop.get_layout_footprint()) * map.tile_size
+		check(not Rect2(prop.global_position - footprint * .5, footprint).grow(60).has_point(guide.global_position), "Angel clears facility footprint: " + String(prop.name))
 	check(not guide.is_in_group("pickup_drop_targets") or guide.get_interaction_button_prompt(actor) == "", "Guide is passive and speaks through the bottom tutorial bar")
 	check(map.map_regions.size() == 1 and map.get_world_bounds().size == tutorial.MAP_SIZES[tutorial.step], "Lesson has its own compact map")
 	for name: String in tutorial.facility_templates:
@@ -54,9 +60,10 @@ func check_lesson_layout() -> void:
 			check(map.is_point_in_kitchen_zone(node.global_position), "Current facility lies inside lesson map")
 		check(node.is_visible_in_tree(), "Required facility is visible: " + String(node.name))
 	check(tutorial.lesson_body.text.split("\n").size() <= 2 and tutorial.lesson_body.text.length() < 180, "Only a short current-action instruction is shown")
-	if tutorial.step not in [tutorial.SKILLS] and not tutorial.ready_to_advance:
+	if tutorial.step not in [tutorial.SKILLS, tutorial.NIGHT, tutorial.BOSS] and not tutorial.ready_to_advance and not (tutorial.step == tutorial.FORAGE and tutorial.forage.state == tutorial.forage.ForageState.SELECTING):
 		check(not tutorial.highlight_nodes.is_empty() and tutorial.target_label.visible, "Next interaction has a visible arrow and pulse highlight")
 	check(not is_instance_valid(main.get_node_or_null("StorageCabinetDesertBird")), "Unrelated ingredient cabinet removed")
+	check(root.get_visible_rect().encloses(tutorial.panel.get_global_rect()), "Tutorial dialogue including explanation button fits the screen")
 
 func accept_order() -> void:
 	var counter: Node = main.get_node("TestServingCounter")
@@ -99,6 +106,15 @@ func run() -> void:
 	check(title.title_menu_buttons.size() == 4 and title.title_menu_buttons[2].text == "教学模式", "Title has keyboard-accessible tutorial entry")
 	title.selected_title_menu_index = 2
 	title._activate_selected_title_menu_item()
+	await settle()
+	check(current_scene.cards.size() == 12, "Tutorial entry opens twelve selectable cards")
+	for card: Button in current_scene.cards:
+		check(not card.disabled and root.get_visible_rect().encloses(card.get_global_rect()), "Each lesson card is unlocked and inside viewport")
+	if OS.get_cmdline_user_args().has("--capture"):
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://_artifact_work/tutorial"))
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://_artifact_work/tutorial/selector.png")
+	current_scene.start_lesson(0)
 	await settle()
 	main = current_scene
 	tutorial = main.get_node("TutorialController")
@@ -144,6 +160,8 @@ func run() -> void:
 	check(tutorial.step == 2 and tutorial.earned_gold > 0 and tutorial.earned_xp > 0, "Service rewards recorded before roast lesson")
 	check_lesson_layout()
 	var roast: Node = main.get_node("BakeCooker")
+	check(not main.get_node("TutorialPrepTableA").has_item and not main.get_node("TutorialPrepTableB").has_item, "Third lesson supplies two empty prep tables")
+	check(tutorial.lesson_body.text.contains("第4段") and tutorial.lesson_body.text.contains("全熟"), "Roast explains all maturity stages and burning")
 	actor.global_position = roast.global_position + Vector2(0, 80)
 	hold(Items.RICE_ID)
 	check(roast.receive_item_from_player(actor), "Roaster accepts wheat")
@@ -185,6 +203,7 @@ func run() -> void:
 	await accept_order()
 	var customer: Dictionary = flow.order_manager.customers["slot:1"]
 	var patience_before: float = customer.time_remaining
+	check(is_equal_approx(patience_before, float(customer.patience_duration) * .45), "Dessert lesson deducts patience after accepting order")
 	check(main.get_node("TestTable").take_item_to_player(actor), "Practice dessert can be taken")
 	check(deliver(), "Dessert offered through real counter")
 	check(not flow.order_manager.active_orders.is_empty() and customer.dessert_received and customer.time_remaining > patience_before, "Dessert restores patience while preserving original order")
@@ -196,13 +215,22 @@ func run() -> void:
 	check(tutorial.step == 5, "Elite customer lesson follows dessert")
 	check_lesson_layout()
 	await accept_order()
+	var elite: Dictionary = flow.order_manager.customers["slot:1"]
+	check(is_equal_approx(float(elite.time_remaining), float(elite.patience_duration) * .45), "Elite starts accepted order with visible patience deficit")
+	var order_hud: Node = main.get_node("OrderHud")
+	order_hud.set_visibility_mode(false, true)
+	for card: Control in order_hud.order_cards.values():
+		check(card.get_rect().size.y >= card.get_node("Window").position.y + card.get_node("Window").size.y, "Collapsed elite card contains its enlarged course progress")
+	order_hud.set_visibility_mode(true, true)
 	for index in range(3):
 		var active: Array = flow.order_manager.get_active_orders()
 		check(active.size() == 1 and int(active[0].customer_orders_remaining) == 2 - index, "Only current elite course visible with correct remaining count")
 		check(not flow.order_manager.take_order_at_slot(1, actor), "Holding or repeating acceptance cannot reveal future elite courses")
 		if actor.is_holding_item(): main.get_node("PlateSink").receive_item_from_player(actor)
 		check(main.get_node(["TestTable", "TutorialDishTable", "TutorialMainTable"][index]).take_item_to_player(actor), "Take current elite course")
+		var before_service: float = elite.time_remaining
 		check(deliver(), "Deliver current elite course")
+		if index < 2: check(float(elite.time_remaining) > before_service, "Serving elite course restores patience")
 	check(flow.order_manager.customers.is_empty(), "Elite customer leaves only after all three courses")
 	tutorial.advance()
 	check(tutorial.step == tutorial.SHOP, "Shop follows completed service lessons")
@@ -225,6 +253,14 @@ func run() -> void:
 	actor.global_position = tutorial.forage.global_position + Vector2(0, 80)
 	tutorial.forage.interact_with_player(actor)
 	tutorial.forage.process_hold_interaction(actor, 4.0)
+	var option_rects: Array[Rect2] = []
+	for option: Dictionary in tutorial.forage.active_options:
+		var offset: Vector2 = option.offset
+		var expected: Dictionary = {KEY_W: Vector2(0, -186), KEY_A: Vector2(-186, 0), KEY_S: Vector2(0, 186), KEY_D: Vector2(186, 0)}
+		check(offset == expected[option.key_code], "Forage options follow cardinal WASD directions")
+		var rect := Rect2(offset - Vector2(74, 71), Vector2(148, 142))
+		for other: Rect2 in option_rects: check(not rect.intersects(other), "Forage cards do not overlap")
+		option_rects.append(rect)
 	tutorial.forage._select_option(tutorial.forage.active_options[0])
 	tutorial.advance()
 	check(tutorial.step == tutorial.COMBAT, "Actual gathering unlocks combat")
@@ -239,34 +275,62 @@ func run() -> void:
 		actor.combat_controller.try_attack(Vector2.RIGHT, Callable(actor, "_can_damage_target_across_zones"))
 	check(tutorial.enemy.is_dead, "Actual player attack geometry kills tutorial enemy")
 	await process_frame
-	var drops := get_nodes_in_group("loose_items")
+	var drops := get_nodes_in_group("battle_drops")
 	check(not drops.is_empty(), "Defeated tutorial enemy spawns physical meat")
-	if not drops.is_empty(): drops.back().take_item_to_player(actor)
+	if not drops.is_empty():
+		actor.global_position = drops.back().global_position
+		drops.back()._physics_process(.016)
+	check(not actor.is_holding_item() and flow.storage_manager.get_stock(Items.MEAT_WHITE_ID) > tutorial.drop_stock_before, "Touching battle drop collects directly into inventory without J")
 	tutorial.advance()
 	check(tutorial.step == tutorial.SKILLS, "Dash, kill and actual loot unlock skills")
 	check_lesson_layout()
+	check(tutorial.info_button.visible and tutorial.lesson_body.text.contains("短冷却"), "Skill lesson explains both roles before practice")
+	tutorial._next_info_page()
+	var skill_station: Node = main.get_node("TestCooker")
+	hold(Items.VEG_LEAF_ID)
+	check(skill_station.receive_item_from_player(actor), "Skill comparison supplies ordinary cutting ingredient")
+	var baseline_presses := 0
+	while skill_station.processing_active and baseline_presses < 20:
+		skill_station.interact_with_player(actor)
+		baseline_presses += 1
+	check(tutorial.events.has(&"skill_cut_before"), "Ordinary cut required before ultimate comparison")
 	check(actor.skill_controller.try_activate_small(), "Small skill uses actual magic and cooldown")
+	tutorial._update_objectives()
+	check(skill_station.take_item_to_player(actor) and main.get_node("TestTable").receive_item_from_player(actor), "First cut can be put on prep table")
+	hold(Items.VEG_LEAF_ID)
+	check(skill_station.receive_item_from_player(actor), "Second comparison uses same ingredient and station")
 	check(actor.skill_controller.try_activate_big(), "Tutorial provision allows real ultimate activation")
+	tutorial._update_objectives()
+	check(not tutorial.ready_to_advance, "Pressing skill keys alone cannot complete comparison")
+	var ultimate_presses := 0
+	while skill_station.processing_active and ultimate_presses < 20:
+		skill_station.interact_with_player(actor)
+		ultimate_presses += 1
+	check(ultimate_presses < baseline_presses and ultimate_presses > 0, "Ultimate cuts actually require fewer presses than baseline")
 	tutorial.advance()
-	check(tutorial.step == tutorial.NIGHT, "Both skills unlock night lesson")
+	check(tutorial.step == tutorial.NIGHT, "Actual before/after cutting unlocks night lesson")
 	check_lesson_layout()
-	check(flow.progression_state.has_pending_menu_offer() and flow.get_blessing_points() > 0, "Night lesson supplies recipe choice and blessing point")
+	check(not flow.progression_state.has_pending_menu_offer() and flow.get_blessing_points() > 0, "Night explains menu without practical recipe choice")
 	check(flow.night_event_controller.npcs.has(&"furnace"), "Actual night visitor exists in tutorial")
-	flow.handle_night_rest_interaction(&"task_book")
-	flow._confirm_selected_menu_dish()
-	check(flow.progression_state.menu_non_drink_ids.size() == 3, "Tutorial menu choice uses actual confirmation handler")
-	flow._return_from_menu_overlay()
+	tutorial._next_info_page()
 	flow.handle_night_rest_interaction(&"blessing_statue")
+	var refreshes: int = flow.progression_state.get_blessing_refreshes()
+	check(flow.blessing_select_controller.refresh_selected(), "Actual blessing refresh available")
+	check(flow.progression_state.get_blessing_refreshes() == refreshes - 1, "Blessing refresh spends one shared run allowance")
 	flow._confirm_selected_blessing()
 	flow.night_event_controller.open_dialogue(&"furnace")
 	var choices: Array = flow.night_event_controller.options
 	flow.night_event_controller._on_choice_selected(choices.size() - 1)
 	tutorial._update_objectives()
-	check(tutorial.ready_to_advance, "All eleven lessons can finish through real systems")
+	check(tutorial.ready_to_advance, "Night blessing and visitor lesson completes")
 	tutorial._reset_practice()
 	await settle()
-	check(not tutorial.ready_to_advance and flow.progression_state.menu_non_drink_ids.size() == 2 and flow.get_owned_blessing_ids().is_empty(), "Night retry restores uncompleted menu and blessing objectives")
+	check(not tutorial.ready_to_advance and flow.progression_state.menu_non_drink_ids.size() == 2 and flow.get_owned_blessing_ids().is_empty(), "Night retry restores uncompleted blessing and information objectives")
 	check(flow.night_event_controller.npcs.size() == 1, "Night retry replaces rather than duplicates visitor")
+	tutorial._skip_to_next()
+	check(tutorial.step == tutorial.BOSS and not tutorial.ready_to_advance, "Twelfth lesson introduces bosses")
+	for page in range(3): tutorial._next_info_page()
+	check(tutorial.ready_to_advance, "Boss introduction completes after all explanation pages")
 	if OS.get_cmdline_user_args().has("--capture"):
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://_artifact_work/tutorial"))
 		root.content_scale_size = Vector2i(1920, 1080)
@@ -293,9 +357,40 @@ func run() -> void:
 				await settle()
 				await RenderingServer.frame_post_draw
 				root.get_texture().get_image().save_png("res://_artifact_work/tutorial/service_after_accept.png")
+			if lesson in [4, 5]:
+				await accept_order()
+				await settle()
+				await RenderingServer.frame_post_draw
+				root.get_texture().get_image().save_png("res://_artifact_work/tutorial/patience_%d.png" % (lesson + 1))
+			if lesson == tutorial.FORAGE:
+				actor.global_position = tutorial.forage.global_position + Vector2(0, 80)
+				tutorial.forage.forage_item_ids.append(Items.MEAT_WHITE_ID)
+				tutorial.forage.interact_with_player(actor)
+				tutorial.forage.process_hold_interaction(actor, 4.0)
+				await settle()
+				await RenderingServer.frame_post_draw
+				root.get_texture().get_image().save_png("res://_artifact_work/tutorial/forage_options.png")
+	else:
+		for lesson in range(tutorial.TITLES.size()):
+			tutorial.step = lesson
+			tutorial._reset_practice()
+			await settle()
+			check_lesson_layout()
 	tutorial._leave()
 	await settle()
-	check(current_scene.get_script() == load("res://Scripts/UI/GameStartController.gd") and not has_meta("run_setup"), "Leaving tutorial returns to a fresh title")
+	check(current_scene.cards.size() == 12 and not has_meta("run_setup"), "Leaving tutorial returns to lesson selection")
+	for chosen in range(12):
+		current_scene.start_lesson(chosen)
+		await settle()
+		main = current_scene
+		tutorial = main.get_node("TutorialController")
+		actor = main.get_node("Player")
+		check(tutorial.step == chosen, "Reentry opens independently selected lesson")
+		check_lesson_layout()
+		tutorial._leave()
+		await settle()
+	current_scene._back()
+	await settle()
 	current_scene._start_run()
 	await settle()
 	var normal_flow: Node = current_scene.get_node("LevelFlowController")
@@ -304,6 +399,6 @@ func run() -> void:
 	current_scene.queue_free()
 	paused = false
 	await process_frame
-	print("TUTORIAL: %d failures; eleven lessons, real stations/orders/shop/forage/combat/skills/menu/blessing/visitor" % errors.size())
+	print("TUTORIAL: %d failures; twelve lessons, selector, layouts, real patience/forage/drops/skill comparison/blessing/visitor" % errors.size())
 	quit(0 if errors.is_empty() else 1)
 

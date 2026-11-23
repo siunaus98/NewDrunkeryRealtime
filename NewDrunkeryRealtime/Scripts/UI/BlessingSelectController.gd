@@ -59,9 +59,9 @@ func enter_selection() -> void:
 	if overlay_body_label != null:
 		var points: int = int(progression_state.get_blessing_points()) if progression_state != null and progression_state.has_method("get_blessing_points") else 0
 		var refreshes: int = int(progression_state.get_blessing_refreshes()) if progression_state != null and progression_state.has_method("get_blessing_refreshes") else 0
-		overlay_body_label.text = "消耗 1 点祝福点数，选择一项祝福。当前祝福点数：%d\n本局刷新次数：%d" % [points, refreshes]
+		overlay_body_label.text = "消耗 1 点祝福点数，选择一项祝福。当前祝福点数：%d\n整局共享刷新次数：%d" % [points, refreshes]
 	if overlay_hint_label != null:
-		overlay_hint_label.text = "鼠标：悬停/点击    左右切换：选择    Space：选定    L：刷新当前选项    K：暂时离开"
+		overlay_hint_label.text = "鼠标：悬停/点击    左右切换：选择    Space：选定    L：刷新当前选项（整局共用次数）    K：暂时离开"
 	if blessing_timer_label != null:
 		blessing_timer_label.visible = false
 	if blessing_timer_bar_frame != null:
@@ -112,7 +112,7 @@ func refresh_selected() -> bool:
 		# Do not consume a refresh if there is no legal replacement.
 		progression_state.add_blessing_refreshes(1)
 		if overlay_body_label != null:
-			overlay_body_label.text = "祝福池中已经没有未出现过的可替换祝福。\n本局刷新次数：%d" % int(progression_state.get_blessing_refreshes())
+			overlay_body_label.text = "祝福池中已经没有未出现过的可替换祝福。\n整局共享刷新次数：%d" % int(progression_state.get_blessing_refreshes())
 		return false
 	var replacement: Dictionary = candidates[0]
 	var old_id := StringName(blessing_options[selected_blessing_index].get("id", &""))
@@ -125,7 +125,7 @@ func refresh_selected() -> bool:
 	if overlay_body_label != null:
 		var points: int = int(progression_state.get_blessing_points())
 		var refreshes: int = int(progression_state.get_blessing_refreshes())
-		overlay_body_label.text = "消耗 1 点祝福点数，选择一项祝福。当前祝福点数：%d\n本局刷新次数：%d" % [points, refreshes]
+		overlay_body_label.text = "消耗 1 点祝福点数，选择一项祝福。当前祝福点数：%d\n整局共享刷新次数：%d" % [points, refreshes]
 	return true
 
 func refresh_cards() -> void:

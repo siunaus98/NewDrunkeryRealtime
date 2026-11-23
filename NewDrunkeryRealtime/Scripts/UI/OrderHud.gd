@@ -154,19 +154,20 @@ func _create_customer_card(orders: Array) -> Panel:
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	card.set_meta("special_guest", special)
 	var sequential := special or elite
-	card.set_meta("expanded_height", 90.0 if waiting else (card_size.y if sequential else card_size.y + float(orders.size() - 1) * 138.0))
+	card.set_meta("sequential", sequential)
+	card.set_meta("expanded_height", 122.0 if waiting else (card_size.y + 32 if sequential else card_size.y + float(orders.size() - 1) * 138.0))
 	_style_panel(card, Color(0.24, 0.065, 0.07, 0.96) if special else Color(0.12, 0.14, 0.18, 0.94), Color(1.0, 0.25, 0.28) if special else Color(0.95, 0.75, 0.30) if elite else Color(0.65, 0.69, 0.75), 3)
 	cards_root.add_child(card)
-	_add_label(card, "CustomerName", ("精英 · " if elite else "") + String(first.get("customer_name", "客人")), Vector2(14, 8), Vector2(card_size.x - 130, 28), 21)
+	_add_label(card, "CustomerName", ("精英 · " if elite else "") + String(first.get("customer_name", "客人")), Vector2(14, 8), Vector2(card_size.x - 28 if sequential else card_size.x - 130, 28), 21)
 	var order_index := maxi(int(first.get("customer_order_index", first.get("special_guest_index", 0))), 0)
 	var order_total := maxi(int(first.get("customer_order_total", first.get("special_guest_total", orders.size()))), 1)
 	var orders_remaining := maxi(int(first.get("customer_orders_remaining", order_total - order_index)), 0)
-	var count_text := "第%d/%d道 · 还剩%d道" % [order_index + 1, order_total, orders_remaining] if sequential else "%d道" % orders.size()
-	_add_label(card, "Window", "%d号 · %s" % [int(first.get("target_slot", 1)), count_text], Vector2(card_size.x - 210, 10), Vector2(202, 26), 16)
+	var count_text := "第%d道 · 剩%d道" % [order_index + 1, orders_remaining] if sequential else "%d道" % orders.size()
+	_add_label(card, "Window", "%d号 · %s" % [int(first.get("target_slot", 1)), count_text], Vector2(14, 38) if sequential else Vector2(card_size.x - 125, 8), Vector2(card_size.x - 28, 30) if sequential else Vector2(115, 30), 24 if sequential else 20)
 	if special:
 		card.get_node("CustomerName").modulate = Color(1.0, 0.4, 0.4)
 	if waiting:
-		_add_label(card, "AcceptPrompt", "K 接单 · 超时持续损失声望", Vector2(14, 37), Vector2(card_size.x - 28, 26), 18)
+		_add_label(card, "AcceptPrompt", "K 接单 · 超时持续扣声望" if special else "按住 K 接单", Vector2(14, 71), Vector2(card_size.x - 28, 26), 18)
 	var dishes := Control.new()
 	dishes.name = "Dishes"
 	dishes.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -178,7 +179,7 @@ func _create_customer_card(orders: Array) -> Panel:
 		var dish_id := StringName(order.get("dish_item_id", &""))
 		var row := Control.new()
 		row.name = "Dish_%s" % String(order.get("order_id", ""))
-		row.position = Vector2(12, 42 + index * 138)
+		row.position = Vector2(12, (74 if sequential else 42) + index * 138)
 		row.size = Vector2(card_size.x - 24, 140)
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		dishes.add_child(row)
@@ -287,11 +288,11 @@ func _relayout_cards(immediate: bool = true) -> void:
 		if index > 0 and index % columns == 0:
 			y += row_height + card_row_spacing
 			row_height = 0.0
-		var height: float = float(card.get_meta("expanded_height")) if is_expanded else 46.0
+		var height: float = float(card.get_meta("expanded_height")) if is_expanded else (86.0 if bool(card.get_meta("sequential", false)) else 46.0)
 		card.size = Vector2(card_size.x, height)
 		card.get_node("Dishes").visible = is_expanded
 		var frame: ColorRect = card.get_node("PatienceBarFrame")
-		frame.position = Vector2(12, height - 16) if is_expanded else Vector2(card_size.x - 62, 33)
+		frame.position = Vector2(12, height - 16) if is_expanded else Vector2(card_size.x - 62, height - 13)
 		frame.size = Vector2(card_size.x - 24, 10) if is_expanded else Vector2(50, 5)
 		_update_card_progress(card)
 		var target := Vector2((index % columns) * (card_size.x + card_spacing), y)

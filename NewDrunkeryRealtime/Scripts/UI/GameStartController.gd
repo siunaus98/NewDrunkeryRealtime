@@ -772,8 +772,7 @@ func _start_run() -> void:
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 
 func _start_tutorial() -> void:
-	get_tree().set_meta("run_setup", {"tutorial": true, "small_skill_variant": &"rush_order", "big_skill_variant": &"steady_pot"})
-	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
+	get_tree().change_scene_to_file("res://Scenes/Main/tutorial_select.tscn")
 
 func _quit_game() -> void:
 	get_tree().quit()

@@ -6,14 +6,13 @@ var halo_time := 0.0
 var highlighted := false
 
 func _ready() -> void:
-	add_to_group("pickup_drop_targets")
 	z_index = 14
 	# Compact one-cell mascot. The drawing itself is intentionally simple and
 	# round so the guide reads as a cute floating chibi, not a miniature adult.
 	scale = Vector2.ONE * 0.72
 	speech_label = Label.new()
-	speech_label.text = "小沙：看这里～"
-	speech_label.position = Vector2(-105, -86)
+	speech_label.text = "小沙"
+	speech_label.position = Vector2(-105, 53)
 	speech_label.size = Vector2(210, 30)
 	speech_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	speech_label.add_theme_font_size_override("font_size", 14)
@@ -28,6 +27,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	draw_set_transform(Vector2(0, 28))
 	var bob := sin(halo_time * 2.2) * 2.0
 	var face := Vector2(0, -42 + bob)
 	# A tiny halo is the only angel cue; the silhouette is a round mascot.
@@ -91,4 +91,4 @@ func set_pickup_drop_highlight(active: bool) -> void:
 
 func set_current_hint(_text: String) -> void:
 	if speech_label != null:
-		speech_label.text = "小沙：看这里～"
+		speech_label.text = "小沙"

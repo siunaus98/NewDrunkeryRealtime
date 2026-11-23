@@ -249,7 +249,7 @@ func _build_options() -> void:
 	_clear_options()
 	var item_ids := forage_item_ids.duplicate()
 	_shuffle_array(item_ids)
-	var key_slots: Array[Dictionary] = _get_key_slots(mini(item_ids.size(), 3))
+	var key_slots: Array[Dictionary] = _get_key_slots(mini(item_ids.size(), 4))
 	for i in range(key_slots.size()):
 		var item_id: StringName = StringName(item_ids[i])
 		var slot: Dictionary = key_slots[i]
@@ -272,7 +272,7 @@ func _build_options() -> void:
 	add_child(option_root)
 	var title := Label.new()
 	title.text = "选择采集物"
-	title.position = to_local(active_player.global_position + Vector2(-130.0, -296.0))
+	title.position = to_local(active_player.global_position + Vector2(-130.0, -292.0))
 	title.size = Vector2(260.0, 34.0)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 22)
@@ -397,10 +397,10 @@ func _check_selection_input() -> void:
 
 func _get_key_slots(count: int) -> Array[Dictionary]:
 	var slots: Array[Dictionary] = [
-		{"key_code": KEY_W, "label": "W", "offset": Vector2(0.0, -226.0)},
-		{"key_code": KEY_A, "label": "A", "offset": Vector2(-132.0, -82.0)},
-		{"key_code": KEY_S, "label": "S", "offset": Vector2(0.0, -82.0)},
-		{"key_code": KEY_D, "label": "D", "offset": Vector2(132.0, -82.0)}
+		{"key_code": KEY_W, "label": "W", "offset": Vector2(0.0, -186.0)},
+		{"key_code": KEY_A, "label": "A", "offset": Vector2(-186.0, 0.0)},
+		{"key_code": KEY_S, "label": "S", "offset": Vector2(0.0, 186.0)},
+		{"key_code": KEY_D, "label": "D", "offset": Vector2(186.0, 0.0)}
 	]
 	_shuffle_array(slots)
 	return slots.slice(0, clampi(count, 0, slots.size()))
