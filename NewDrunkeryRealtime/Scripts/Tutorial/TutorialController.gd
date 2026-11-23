@@ -52,6 +52,9 @@ var guide_name_label: Label
 var last_guide_text := ""
 var guide_line_index := 0
 var guide_flavor_index := 0
+var guide_npc: Node2D
+var guide_dialogue_layer: CanvasLayer
+var guide_dialogue_label: Label
 
 func setup(scene: Node) -> void:
 	main = scene
@@ -115,21 +118,6 @@ func _build_hud() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 25)
 	margin.add_child(row)
-	var guide_column := VBoxContainer.new()
-	guide_column.custom_minimum_size = Vector2(130, 132)
-	guide_column.add_theme_constant_override("separation", 2)
-	row.add_child(guide_column)
-	guide_portrait = TextureRect.new()
-	guide_portrait.custom_minimum_size = Vector2(120, 112)
-	guide_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	guide_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	guide_portrait.texture = load("res://ArtResource/Restaurant/salesperson.svg")
-	guide_column.add_child(guide_portrait)
-	guide_name_label = _label(17)
-	guide_name_label.text = "沙丘向导 · 小沙"
-	guide_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	guide_name_label.add_theme_color_override("font_color", Color("ffe1a0"))
-	guide_column.add_child(guide_name_label)
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_theme_constant_override("separation", 8)
@@ -160,6 +148,16 @@ func _build_hud() -> void:
 		if button is Button:
 			button.custom_minimum_size.y = 32
 			button.focus_mode = Control.FOCUS_NONE
+	guide_dialogue_layer = CanvasLayer.new()
+	guide_dialogue_layer.layer = 78
+	add_child(guide_dialogue_layer)
+	guide_dialogue_label = _label(22)
+	guide_dialogue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	guide_dialogue_label.position = Vector2(420, 20)
+	guide_dialogue_label.size = Vector2(1120, 150)
+	guide_dialogue_label.visible = false
+	guide_dialogue_label.add_theme_color_override("font_color", Style.LIGHT)
+	guide_dialogue_layer.add_child(guide_dialogue_label)
 
 func _label(size_value: int) -> Label:
 	var label := Label.new()
@@ -267,7 +265,8 @@ func _guide(text: String, targets: Array = []) -> void:
 		var leads := ["先别急着把厨房炸了，", "好，轮到你出手了——", "这一步很关键，别让食材等到长草：", "小沙友情提醒："]
 		var lead: String = leads[guide_flavor_index % leads.size()]
 		guide_flavor_index += 1
-		lesson_body.text = "“%s%s”" % [lead, text]
+		lesson_body.text = text
+		if is_instance_valid(guide_npc): guide_npc.set_current_hint(text)
 	for node: Node2D in highlight_nodes:
 		if is_instance_valid(node):
 			node.modulate = Color.WHITE
@@ -276,6 +275,15 @@ func _guide(text: String, targets: Array = []) -> void:
 	for target in targets:
 		var node: Node = main.get_node_or_null(target) if target is String else target
 		if is_instance_valid(node): highlight_nodes.append(node)
+	if is_instance_valid(guide_npc): guide_npc.set_pickup_drop_highlight(targets.is_empty())
+
+func show_guide_npc_dialogue() -> void:
+	if not is_instance_valid(guide_dialogue_label): return
+	guide_dialogue_label.text = "小沙：%s" % lesson_body.text
+	guide_dialogue_label.visible = true
+	get_tree().create_timer(3.0).timeout.connect(func() -> void:
+		if is_instance_valid(guide_dialogue_label): guide_dialogue_label.visible = false
+	)
 
 func _update_current_instruction() -> void:
 	if ready_to_advance:
@@ -363,9 +371,16 @@ func _build_lesson_map() -> void:
 	for node: Node in lesson_nodes:
 		if is_instance_valid(node): node.free()
 	lesson_nodes.clear()
+	if is_instance_valid(guide_npc): guide_npc.free()
+	guide_npc = null
 	var map: Node = main.get_node("PrototypeMap")
 	lesson_bounds = Rect2(Vector2(128, 128), MAP_SIZES[step])
 	map.configure_tutorial_lesson(step, lesson_bounds, step in [FORAGE, COMBAT])
+	guide_npc = preload("res://Scripts/Tutorial/TutorialGuideNPC.gd").new()
+	guide_npc.name = "TutorialGuideNPC"
+	guide_npc.tutorial = self
+	guide_npc.position = lesson_bounds.position + Vector2(lesson_bounds.size.x - 110, lesson_bounds.size.y - 115)
+	main.add_child(guide_npc)
 	for name: String in LAYOUTS[step]:
 		var template_name := "TestTable" if name in ["TutorialDishTable", "TutorialMainTable"] else name
 		var node: Node2D = preload("res://Scripts/Tutorial/TutorialRecipeBook.gd").new() if name == "RecipeBook" else facility_templates[template_name].instantiate()
