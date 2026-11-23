@@ -47,6 +47,11 @@ const LAYOUTS = [
 const MAP_SIZES = [Vector2(1152, 768), Vector2(1280, 768), Vector2(1152, 768), Vector2(1152, 768), Vector2(1152, 768), Vector2(1280, 768), Vector2(768, 640), Vector2(1024, 768), Vector2(1152, 768), Vector2(1024, 640), Vector2(1280, 768)]
 var highlight_clock := 0.0
 var target_label: Label
+var guide_portrait: TextureRect
+var guide_name_label: Label
+var last_guide_text := ""
+var guide_line_index := 0
+var guide_flavor_index := 0
 
 func setup(scene: Node) -> void:
 	main = scene
@@ -110,6 +115,21 @@ func _build_hud() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 25)
 	margin.add_child(row)
+	var guide_column := VBoxContainer.new()
+	guide_column.custom_minimum_size = Vector2(130, 132)
+	guide_column.add_theme_constant_override("separation", 2)
+	row.add_child(guide_column)
+	guide_portrait = TextureRect.new()
+	guide_portrait.custom_minimum_size = Vector2(120, 112)
+	guide_portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	guide_portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	guide_portrait.texture = load("res://ArtResource/Restaurant/salesperson.svg")
+	guide_column.add_child(guide_portrait)
+	guide_name_label = _label(17)
+	guide_name_label.text = "沙丘向导 · 小沙"
+	guide_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	guide_name_label.add_theme_color_override("font_color", Color("ffe1a0"))
+	guide_column.add_child(guide_name_label)
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_theme_constant_override("separation", 8)
@@ -126,7 +146,7 @@ func _build_hud() -> void:
 	actions.add_child(checklist)
 	next_button = Button.new()
 	next_button.text = "完成当前练习后继续"
-	next_button.pressed.connect(advance)
+	next_button.pressed.connect(_skip_to_next)
 	actions.add_child(next_button)
 	var retry := Button.new()
 	retry.text = "重置当前练习 / 补给 · F5"
@@ -236,11 +256,18 @@ func _update_objectives() -> void:
 	checklist.text = "已完成 %d / %d" % [checks.filter(func(value: Dictionary) -> bool: return bool(value.ok)).size(), checks.size()]
 	next_button.disabled = not ready_to_advance
 	next_button.text = "教学完成 · Enter 返回标题" if step == NIGHT and ready_to_advance else ("下一课 → Enter" if ready_to_advance else "完成当前练习后继续")
+	next_button.text = "直接进入下一关 →" if not ready_to_advance else ("教学完成 · 返回标题" if step == NIGHT else "进入下一关 →")
 	lesson_title.text = "教学 %d / %d  ·  %s" % [step + 1, TITLES.size(), TITLES[step]]
 	_update_current_instruction()
 
 func _guide(text: String, targets: Array = []) -> void:
-	lesson_body.text = text
+	if text != last_guide_text:
+		guide_line_index += 1
+		last_guide_text = text
+		var leads := ["先别急着把厨房炸了，", "好，轮到你出手了——", "这一步很关键，别让食材等到长草：", "小沙友情提醒："]
+		var lead: String = leads[guide_flavor_index % leads.size()]
+		guide_flavor_index += 1
+		lesson_body.text = "“%s%s”" % [lead, text]
 	for node: Node2D in highlight_nodes:
 		if is_instance_valid(node):
 			node.modulate = Color.WHITE
@@ -418,6 +445,14 @@ func advance() -> void:
 		return
 	if step == NIGHT:
 		completed = true
+		_leave()
+		return
+	step += 1
+	lesson_progression_snapshot = flow.progression_state.get_snapshot()
+	_reset_practice()
+
+func _skip_to_next() -> void:
+	if step == NIGHT:
 		_leave()
 		return
 	step += 1
