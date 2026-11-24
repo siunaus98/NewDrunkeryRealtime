@@ -178,13 +178,18 @@ func build_overlay(
 	shop_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
 	shop_root.add_child(shop_scroll)
 
+	var shop_grid_margin := MarginContainer.new()
+	shop_grid_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	shop_grid_margin.add_theme_constant_override("margin_right", 24)
+	shop_scroll.add_child(shop_grid_margin)
+
 	shop_item_list = GridContainer.new()
 	shop_item_list.process_mode = Node.PROCESS_MODE_ALWAYS
 	shop_item_list.columns = 3
 	shop_item_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shop_item_list.add_theme_constant_override("h_separation", 15)
 	shop_item_list.add_theme_constant_override("v_separation", 15)
-	shop_scroll.add_child(shop_item_list)
+	shop_grid_margin.add_child(shop_item_list)
 
 	debug_label = Label.new()
 	debug_label.visible = OS.get_cmdline_user_args().has("--debug-ui")

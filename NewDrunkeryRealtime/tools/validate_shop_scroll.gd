@@ -42,6 +42,9 @@ func _run() -> void:
 	var row_gap: int = shop.shop_item_list.get_theme_constant("v_separation")
 	check(absf(shop.shop_scroll.size.y - (card_height * 2 + row_gap)) <= 1.0, "Shop viewport fits two complete enlarged rows")
 	check(shop.shop_item_list.size.x >= shop.shop_scroll.size.x * 0.95, "Product grid uses the full shop width")
+	var scrollbar_rect: Rect2 = shop.shop_scroll.get_v_scroll_bar().get_global_rect()
+	for panel: Panel in shop.shop_item_panels:
+		check(panel.get_global_rect().end.x <= scrollbar_rect.position.x - 24, "Every product leaves a clear gutter before the scrollbar")
 	check(shop.shop_category_tabs.get_node("ShopWallet").text == "金币  %d" % flow.progression_state.gold, "Wallet is visible in the category header")
 	check(root.get_visible_rect().encloses(flow.overlay_controller.overlay_panel.get_global_rect()), "Shop panel stays inside screen")
 	shop.move_selection_2d(1, 0)
@@ -108,6 +111,41 @@ func _run() -> void:
 	shop.move_selection_2d(1, 0)
 	await settle_layout()
 	check(selection_visible(), "Category switch and first navigation show the new selection")
+	# The actual shop retains earlier stock as later regions join the menu.
+	var items = preload("res://Scripts/Kitchen/TestItemDefs.gd")
+	var previous_ids: Array[StringName] = []
+	for day in range(7):
+		flow.progression_state.day_index = day
+		shop._rebuild_merchant_shop_items()
+		shop.selected_shop_category_index = 3
+		shop.selected_shop_index = -1
+		shop._refresh_night_shop_overlay()
+		await settle_layout()
+		var frozen_indices: Array[int] = shop._get_shop_item_indices_for_category(3)
+		var available := shop.get_unlocked_frozen_food_ids() as Array[StringName]
+		check(available.size() == (5 if day < 2 else (8 if day < 4 else 12)), "Day %d stocks only introduced regions" % (day + 1))
+		check(frozen_indices.size() == available.size(), "Each unlocked ingredient has a selectable shop entry")
+		for id: StringName in previous_ids:
+			check(id in available, "Previously unlocked frozen ingredient remains available")
+		for index: int in frozen_indices:
+			var entry: Dictionary = shop.merchant_shop_items[index]
+			check(not items.is_boss_ingredient(entry.item_id), "Boss ingredients cannot be purchased")
+			check(String(entry.id) == "frozen_%s" % entry.item_id, "Frozen items have stable distinct selection IDs")
+		if day < 4:
+			check(items.MEAT_RED_ID not in available and items.VEG_ROOT_ID not in available, "Eastern ingredients stay locked until day five")
+			check(not shop._purchase_frozen_food(shop._build_frozen_food_shop_item(items.MEAT_RED_ID)), "Purchase rejects a locked ingredient even through a stale entry")
+		var entry: Dictionary = shop.merchant_shop_items[frozen_indices.back()]
+		shop.selected_shop_index = frozen_indices.back()
+		var stock_before: int = shop.storage_manager.get_frozen_stock(entry.item_id)
+		var gold_before: int = flow.progression_state.gold
+		check(shop.purchase_selected(), "Unlocked frozen food can be purchased")
+		await settle_layout()
+		check(shop.storage_manager.get_frozen_stock(entry.item_id) == stock_before + 3 and flow.progression_state.gold == gold_before - 9, "Purchase adds frozen stock and charges once")
+		check(shop.merchant_shop_items[shop.selected_shop_index].id == entry.id and selection_visible(), "Frozen purchase preserves the selected ingredient and scroll position")
+		var bar_rect: Rect2 = shop.shop_scroll.get_v_scroll_bar().get_global_rect()
+		for panel: Panel in shop.shop_item_panels:
+			check(panel.get_global_rect().end.x <= bar_rect.position.x - 24, "Frozen food cards retain the scrollbar gutter after purchase")
+		previous_ids = available
 	main.queue_free()
 	await process_frame
 	print("SHOP SCROLL: %d failures; actual paused UI, row navigation, wrapping, rapid input and purchase reflow" % failures.size())

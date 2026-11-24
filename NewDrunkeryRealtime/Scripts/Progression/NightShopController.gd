@@ -6,6 +6,7 @@ signal purchase_completed(new_gold: int)
 
 const RunProgressionState = preload("res://Scripts/Core/RunProgressionState.gd")
 const TestItemDefs = preload("res://Scripts/Kitchen/TestItemDefs.gd")
+const IngredientSourceDefs = preload("res://Scripts/Core/IngredientSourceDefs.gd")
 const AttributeForgeDefs = preload("res://Scripts/Progression/AttributeForgeDefs.gd")
 
 var overlay_title_label: Label
@@ -79,7 +80,9 @@ func _resize_shop_cards() -> void:
 	var h_gap := shop_item_list.get_theme_constant("h_separation")
 	var v_gap := shop_item_list.get_theme_constant("v_separation")
 	var scrollbar_width := shop_scroll.get_v_scroll_bar().get_combined_minimum_size().x
-	var width := floorf((shop_scroll.size.x - scrollbar_width - h_gap * (columns - 1)) / columns)
+	var grid_margin := shop_item_list.get_parent() as MarginContainer
+	var right_margin := grid_margin.get_theme_constant("margin_right") if grid_margin != null else 0
+	var width := floorf((shop_scroll.size.x - scrollbar_width - right_margin - h_gap * (columns - 1)) / columns)
 	# Fill the viewport with two rows, keeping keyboard movement between them steady.
 	var height := floorf((shop_scroll.size.y - v_gap) * 0.5)
 	for panel: Panel in shop_item_panels:
@@ -355,7 +358,8 @@ func _rebuild_merchant_shop_items() -> void:
 	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"magic_regen", "泉眼滤芯", "加快魔力恢复。", 15, "魔力恢复更快"))
 	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"station_speed", "厨具改良", "提高料理台的加工效率。", 24, "加工速度提高"))
 	_append_manual_facility_if_available(&"prep_table", "备料桌", "存放食材、小料盒与盘子。", 10, "增加备料空间")
-	merchant_shop_items.append(_build_frozen_food_shop_item())
+	for item_id: StringName in get_unlocked_frozen_food_ids():
+		merchant_shop_items.append(_build_frozen_food_shop_item(item_id))
 	_append_manual_facility_if_available(&"conveyor", "履带", "沿固定方向运送物品和玩家。", 14, "推动玩家/物品")
 	_append_manual_facility_if_available(&"lamp", "明光灯", "提高附近设施的工作效率。", 16, "附近设施效率提高")
 	for entry: Dictionary in preload("res://Scripts/Facilities/FacilityCatalog.gd").ENTRIES:
@@ -507,17 +511,18 @@ func _refresh_forge_overlay() -> void:
 		style.set_border_width_all(4)
 		panel.add_theme_stylebox_override("panel", style)
 
-func _build_frozen_food_shop_item() -> Dictionary:
-	var item_cycle: Array[StringName] = [
-		TestItemDefs.MEAT_RED_ID,
-		TestItemDefs.MEAT_WHITE_ID,
-		TestItemDefs.VEG_LEAF_ID,
-		TestItemDefs.VEG_ROOT_ID
-	]
+func get_unlocked_frozen_food_ids() -> Array[StringName]:
 	var current_day_index: int = progression_state.day_index if progression_state != null else 0
-	var selected_item_id: StringName = item_cycle[current_day_index % item_cycle.size()]
+	var stage := IngredientSourceDefs.get_menu_stage(current_day_index)
+	var result: Array[StringName] = []
+	for item_id: StringName in TestItemDefs.INGREDIENT_IDS:
+		if not TestItemDefs.is_boss_ingredient(item_id) and IngredientSourceDefs.get_ingredient_stage(item_id) <= stage:
+			result.append(item_id)
+	return result
+
+func _build_frozen_food_shop_item(selected_item_id: StringName) -> Dictionary:
 	return {
-		"id": &"frozen_food",
+		"id": StringName("frozen_%s" % selected_item_id),
 		"type": &"frozen_food",
 		"category": &"frozen",
 		"title": "冷冻%s" % TestItemDefs.get_item_display_name(selected_item_id),
@@ -581,7 +586,7 @@ func _purchase_frozen_food(item_data: Dictionary) -> bool:
 		return false
 	var item_id: StringName = StringName(item_data.get("item_id", &""))
 	var amount: int = int(item_data.get("amount", 0))
-	if amount <= 0:
+	if amount <= 0 or item_id not in get_unlocked_frozen_food_ids():
 		return false
 	storage_manager.add_stock(item_id, amount, &"frozen")
 	return true
