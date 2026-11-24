@@ -27,7 +27,7 @@ const MONITOR_PLAYTEST_ARGUMENT: String = "--test-monitor"
 
 # Temporary short days for reviewing pre-business mechanism and boss cards.
 # Disable this switch to restore the normal preparation and service durations.
-const BRIEFING_PREVIEW_SHORT_DAYS: bool = true
+const BRIEFING_PREVIEW_SHORT_DAYS: bool = false
 const BRIEFING_PREVIEW_PREPARE_DURATION: float = 5.0
 const BRIEFING_PREVIEW_SERVICE_DURATION: float = 20.0
 
