@@ -6,7 +6,7 @@ const LevelRefs = preload("res://Scripts/Core/LevelRefs.gd")
 @export var card_size: Vector2 = Vector2(360.0, 218.0)
 @export var card_spacing: float = 14.0
 @export var card_row_spacing: float = 12.0
-@export var screen_margin: Vector2 = Vector2(24.0, 18.0)
+@export var screen_margin: Vector2 = Vector2(24.0, 0.0)
 @export var relayout_animation_duration: float = 0.18
 @export var wave_status_height: float = 34.0
 
@@ -278,7 +278,10 @@ func _relayout_cards(immediate: bool = true) -> void:
 	if animate:
 		is_transitioning_visibility = true
 		relayout_tween = create_tween().set_parallel(true)
-	cards_root.position = Vector2(screen_margin.x, screen_margin.y + wave_status_height + 6)
+	# Use the full top edge for customer orders. The wave label is secondary and
+	# remains visible only while there are no cards to avoid a dead top strip.
+	cards_root.position = Vector2(screen_margin.x, 0.0)
+	wave_status_label.visible = order_cards.is_empty() and current_wave_number > 0
 	var available_width := maxf(get_viewport().get_visible_rect().size.x - screen_margin.x * 2, card_size.x)
 	var columns := maxi(int(floor((available_width + card_spacing) / (card_size.x + card_spacing))), 1)
 	var index: int = 0
@@ -318,7 +321,7 @@ func _stop_relayout_tween() -> void:
 func _update_wave_status(text: String, visible: bool) -> void:
 	if wave_status_label != null:
 		wave_status_label.text = text
-		wave_status_label.visible = visible
+		wave_status_label.visible = visible and order_cards.is_empty()
 
 func _style_panel(panel: Panel, background: Color, border: Color, border_width: int) -> void:
 	var style := StyleBoxFlat.new()

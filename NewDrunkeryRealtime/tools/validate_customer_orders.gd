@@ -198,6 +198,7 @@ func _test_live_delivery_and_hud(main: Node) -> void:
 	manager.take_order_at_slot(1)
 	_check(hud.order_cards.size() == 1, "A multi-dish customer must have one card and one patience bar.")
 	var card: Panel = hud.order_cards.values()[0]
+	_check(is_equal_approx(card.position.y, 0.0), "Customer order cards touch the top edge of the screen.")
 	_check(card.get_node("Dishes").get_child_count() == 3, "One acceptance must reveal all requested dishes together.")
 	for row: Control in card.get_node("Dishes").get_children():
 		_check(row.get_node("DishIcon").size == Vector2(54, 54), "Dish textures must respect the compact card size.")
