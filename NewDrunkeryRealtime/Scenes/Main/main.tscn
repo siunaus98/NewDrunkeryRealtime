@@ -533,11 +533,3 @@ scale = Vector2(0.21, 0.21)
 [node name="PrepTableB" parent="." instance=ExtResource("11_test_table")]
 position = Vector2(2880, 832)
 scale = Vector2(0.21, 0.21)
-
-[node name="PrepTableC" parent="." instance=ExtResource("11_test_table")]
-position = Vector2(3136, 1088)
-scale = Vector2(0.21, 0.21)
-
-[node name="PrepTableD" parent="." instance=ExtResource("11_test_table")]
-position = Vector2(3136, 1344)
-scale = Vector2(0.21, 0.21)

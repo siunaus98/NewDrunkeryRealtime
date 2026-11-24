@@ -42,9 +42,9 @@ var reward_forge_active: bool = false
 var scroll_request_id: int = 0
 
 const SHOP_FACILITY_LIMITS := {
-	&"prep_table": 2,
-	&"conveyor": 2,
-	&"lamp": 1,
+	&"prep_table": 3,
+	&"conveyor": 10,
+	&"lamp": 2,
 }
 
 func configure_ui(

@@ -237,18 +237,7 @@ func _clear_batch_if_empty() -> void:
 		current_drink_item_id = &""
 
 func _get_nearby_support_fill_multiplier() -> float:
-	var multiplier: float = 1.0
-	for support in get_tree().get_nodes_in_group("support_facilities"):
-		if not is_instance_valid(support) or not (support is Node2D):
-			continue
-		if support is CanvasItem and not (support as CanvasItem).visible:
-			continue
-		if not support.has_method("get_barrel_fill_speed_multiplier"):
-			continue
-		if global_position.distance_to((support as Node2D).global_position) > float(support.get_support_aura_radius()):
-			continue
-		multiplier = maxf(multiplier, float(support.get_barrel_fill_speed_multiplier()))
-	return multiplier
+	return preload("res://Scripts/Core/SupportFacilityAuraQuery.gd").get_work_multiplier(get_tree(), global_position, &"get_barrel_fill_speed_multiplier")
 
 func _apply_shape() -> void:
 	var shape := RectangleShape2D.new()

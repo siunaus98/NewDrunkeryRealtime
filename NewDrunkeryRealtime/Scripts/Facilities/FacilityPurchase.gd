@@ -15,7 +15,7 @@ static func purchase(flow: Node, id: StringName) -> bool:
 	for index in range(2 if bool(entry.get("pair", false)) else 1):
 		var facility := Catalog.create(id)
 		root.add_child(facility)
-		var position: Vector2 = _find_vehicle_position(flow, facility) if id == &"forklift" else flow._find_support_facility_spawn_position(facility)
+		var position: Vector2 = _find_battle_position(flow, facility) if id in [&"forklift", &"ballista", &"trap_rack"] else flow._find_support_facility_spawn_position(facility)
 		if position == Vector2.INF:
 			facility.free()
 			for previous: Node2D in created:
@@ -34,7 +34,7 @@ static func purchase(flow: Node, id: StringName) -> bool:
 			created[1].cart_here = false
 	return true
 
-static func _find_vehicle_position(flow: Node, facility: Node2D) -> Vector2:
+static func _find_battle_position(flow: Node, facility: Node2D) -> Vector2:
 	var map: Node = flow.level_refs.get_prototype_map()
 	var region: Rect2 = map.get_region_bounds(&"near")
 	for y in range(int(region.position.y / 128), int(region.end.y / 128)):

@@ -41,8 +41,11 @@ static func _append_facility_entry(entries: Array[Dictionary], seen: Dictionary,
 		texture_path = "res://ArtResource/Facilities/%s.svg" % String(id)
 	var texture: Texture2D = load(texture_path) if ResourceLoader.exists(texture_path) else null
 	var limit := int(source.get("limit", 0))
+	var manual_limits := preload("res://Scripts/Progression/NightShopController.gd").SHOP_FACILITY_LIMITS
+	if manual_limits.has(id): limit = int(manual_limits[id])
 	var limit_text := "可重复购买" if limit <= 0 else "最多购买 %d 个" % limit
 	var detail := String(source.get("detail", source.get("description", "")))
+	if id == &"lamp": detail += "重叠光照的效率加成按加法叠加。"
 	entries.append({
 		"id": id,
 		"name": String(source.get("name", "设施")),
