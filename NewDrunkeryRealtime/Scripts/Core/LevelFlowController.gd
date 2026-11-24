@@ -649,7 +649,7 @@ func _enter_night_rest() -> void:
 		run_status_hud.set_status_visible(true)
 	_update_debug_label()
 	if not tutorial_mode and progression_state != null and progression_state.day_index == 0 and overlay_controller != null:
-		overlay_controller.show_toast("第一晚可以先整理料理区：空手按 K 搬运设施，白天搬运不耗魔力但会变慢、不能冲刺；整理好后，到组合台按 J 开启营业。", 14.0)
+		overlay_controller.show_toast("第一晚可以先整理料理区：空手按 K 搬运设施，白天搬运不耗魔力但会变慢、不能冲刺；整理好后，到组合台按 K 开启营业。", 14.0)
 
 func _enter_order_group_select() -> void:
 	if tutorial_mode:

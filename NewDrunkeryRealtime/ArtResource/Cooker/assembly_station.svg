@@ -6,7 +6,7 @@
 <!-- warm counter body -->
 <path d="M15 157h226v19H15z" fill="#9a5a32" stroke="#513420" stroke-width="3"/>
 <path d="M21 161h214v10H21z" fill="#c68146" stroke="#754829" stroke-width="2"/>
-<path d="M27 175h18v43H27zM211 175h18v43h-18z" fill="#754528" stroke="#513420" stroke-width="3"/>
+
 <path d="M12 55Q12 48 20 48h216q8 0 8 7v105H12z" fill="url(#wood)" stroke="#513420" stroke-width="3"/>
 <path d="M18 62h220v92H18z" fill="url(#top)" stroke="#bd8246" stroke-width="3"/>
 <!-- six clearly readable combination bays -->
@@ -22,3 +22,4 @@
 <path d="M177 101l10 9-10 9M184 110h-10" fill="none" stroke="#9b5c32" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M123 162h10" stroke="#f3cc7c" stroke-width="2" stroke-linecap="round"/>
 </svg>
+
