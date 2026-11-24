@@ -65,7 +65,7 @@ func check_lesson_layout() -> void:
 			check(map.is_point_in_kitchen_zone(node.global_position), "Current facility lies inside lesson map")
 		check(node.is_visible_in_tree(), "Required facility is visible: " + String(node.name))
 	check(tutorial.lesson_body.text.split("\n").size() <= 2 and tutorial.lesson_body.text.length() < 180, "Only a short current-action instruction is shown")
-	if tutorial.step not in [tutorial.SKILLS, tutorial.NIGHT, tutorial.BOSS] and not tutorial.ready_to_advance and not (tutorial.step == tutorial.FORAGE and tutorial.forage.state == tutorial.forage.ForageState.SELECTING):
+	if tutorial.step not in [1, tutorial.SKILLS, tutorial.NIGHT, tutorial.COMBAT, tutorial.BOSS] and not tutorial.ready_to_advance and not (tutorial.step == tutorial.FORAGE and tutorial.forage.state == tutorial.forage.ForageState.SELECTING):
 		check(not tutorial.highlight_nodes.is_empty() and tutorial.target_label.visible, "Next interaction has a visible arrow and pulse highlight")
 	check(not is_instance_valid(main.get_node_or_null("StorageCabinetDesertBird")), "Unrelated ingredient cabinet removed")
 	check(root.get_visible_rect().encloses(tutorial.panel.get_global_rect()), "Tutorial dialogue including explanation button fits the screen")
@@ -149,6 +149,12 @@ func run() -> void:
 	check(tutorial.step == 1, "Dish making leads directly to plate and customer lesson")
 	check_lesson_layout()
 	assembly = main.get_node("AssemblyStation")
+	check(flow.run_status_hud.day_clock.visible and tutorial.lesson_body.text.contains("倒计时"), "Second lesson first highlights business clock")
+	tutorial._process(.1)
+	check(tutorial.ui_highlight.visible and tutorial.ui_highlight.get_global_rect().encloses(flow.run_status_hud.day_clock.get_global_rect()), "Clock receives visible first-step highlight")
+	tutorial._next_info_page()
+	check(tutorial.lesson_body.text.contains("声望归零") and flow.run_status_hud.reputation_panel.visible, "Customer lesson explains reputation failure")
+	tutorial._next_info_page()
 	check(not assembly.can_take_item(actor), "Dish cannot be taken without clean plate")
 	tutorial._update_objectives()
 	check(tutorial.highlight_nodes.has(main.get_node("TestServingCounter")) and not actor.is_holding_item(), "Second lesson starts by accepting order before picking up plate or dish")
@@ -235,7 +241,14 @@ func run() -> void:
 		check(main.get_node(["TestTable", "TutorialDishTable", "TutorialMainTable"][index]).take_item_to_player(actor), "Take current elite course")
 		var before_service: float = elite.time_remaining
 		check(deliver(), "Deliver current elite course")
-		if index < 2: check(float(elite.time_remaining) > before_service, "Serving elite course restores patience")
+		if index < 2:
+			var expected_ratio := .55 if index == 0 else .75
+			check(is_equal_approx(float(elite.time_remaining) / float(elite.patience_duration), expected_ratio), "Elite course restores only correct fraction")
+			var counter: Node = main.get_node("TestServingCounter")
+			var fill: ColorRect = counter.prompt_fill_by_slot[0]
+			check(is_equal_approx(fill.size.x / counter.order_prompt_bar_size.x, expected_ratio), "World counter patience matches accepted course clock instead of waiting clock")
+			var card: Control = order_hud.order_cards.values()[0]
+			check(is_equal_approx(float(card.get_meta("patience_ratio")), expected_ratio), "Order HUD shares exact course patience")
 	check(flow.order_manager.customers.is_empty(), "Elite customer leaves only after all three courses")
 	tutorial.advance()
 	check(tutorial.step == tutorial.SHOP, "Shop follows completed service lessons")
@@ -270,6 +283,8 @@ func run() -> void:
 	tutorial.advance()
 	check(tutorial.step == tutorial.COMBAT, "Actual gathering unlocks combat")
 	check_lesson_layout()
+	check(tutorial.lesson_body.text.contains("15秒") and tutorial.lesson_body.text.contains("10%") and tutorial.lesson_body.text.contains("夜间"), "Combat introduction explains recovery and nightly healing")
+	tutorial._next_info_page()
 	actor.global_position = tutorial.enemy.global_position - Vector2(100, 0)
 	actor.aim_direction = Vector2.RIGHT
 	actor._try_dash()
@@ -289,8 +304,10 @@ func run() -> void:
 	tutorial.advance()
 	check(tutorial.step == tutorial.SKILLS, "Dash, kill and actual loot unlock skills")
 	check_lesson_layout()
-	check(tutorial.info_button.visible and tutorial.lesson_body.text.contains("短冷却"), "Skill lesson explains both roles before practice")
-	tutorial._next_info_page()
+	check(not tutorial.info_button.visible and tutorial.lesson_body.text.contains("小技能") and tutorial.lesson_body.text.contains("短冷却"), "Small skill is taught independently without extra continue key")
+	check(actor.skill_controller.try_activate_small(), "Small skill uses actual magic and cooldown")
+	tutorial._update_objectives()
+	check(tutorial.lesson_body.text.contains("普通速度") and not tutorial.info_button.visible, "Small skill use automatically proceeds to baseline cutting")
 	var skill_station: Node = main.get_node("TestCooker")
 	hold(Items.VEG_LEAF_ID)
 	check(skill_station.receive_item_from_player(actor), "Skill comparison supplies ordinary cutting ingredient")
@@ -299,11 +316,12 @@ func run() -> void:
 		skill_station.interact_with_player(actor)
 		baseline_presses += 1
 	check(tutorial.events.has(&"skill_cut_before"), "Ordinary cut required before ultimate comparison")
-	check(actor.skill_controller.try_activate_small(), "Small skill uses actual magic and cooldown")
 	tutorial._update_objectives()
+	check(tutorial.lesson_body.text.contains("大技能效果强力"), "Strong charged ultimate is explained after baseline cutting")
 	check(skill_station.take_item_to_player(actor) and main.get_node("TestTable").receive_item_from_player(actor), "First cut can be put on prep table")
 	hold(Items.VEG_LEAF_ID)
 	check(skill_station.receive_item_from_player(actor), "Second comparison uses same ingredient and station")
+	tutorial._update_objectives()
 	check(actor.skill_controller.try_activate_big(), "Tutorial provision allows real ultimate activation")
 	tutorial._update_objectives()
 	check(not tutorial.ready_to_advance, "Pressing skill keys alone cannot complete comparison")
@@ -334,7 +352,9 @@ func run() -> void:
 	check(flow.night_event_controller.npcs.size() == 1, "Night retry replaces rather than duplicates visitor")
 	tutorial._skip_to_next()
 	check(tutorial.step == tutorial.BOSS and not tutorial.ready_to_advance, "Twelfth lesson introduces bosses")
-	for page in range(3): tutorial._next_info_page()
+	tutorial._next_info_page()
+	check(tutorial.lesson_body.text.contains("主菜一定需要"), "Boss lesson makes required boss ingredient unambiguous")
+	for page in range(2): tutorial._next_info_page()
 	check(tutorial.ready_to_advance, "Boss introduction completes after all explanation pages")
 	if OS.get_cmdline_user_args().has("--capture"):
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://_artifact_work/tutorial"))

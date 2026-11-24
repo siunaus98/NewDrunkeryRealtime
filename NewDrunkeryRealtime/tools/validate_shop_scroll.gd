@@ -31,17 +31,31 @@ func _run() -> void:
 	await process_frame
 	var flow: Node = main.get_node("LevelFlowController")
 	flow.set_process(false)
+	flow.overlay_controller.set_transition_visible(false)
 	flow.input_release_guard_active = false
 	flow._open_night_shop_overlay()
 	shop = flow.night_shop_controller
 	shop.move_category_selection(2)
 	await settle_layout()
 	check(paused and shop.shop_scroll.is_visible_in_tree(), "Exercise actual paused shop UI")
+	check(is_equal_approx(shop.shop_scroll.size.y, 574), "Shop viewport fits exactly two 280px rows and their gap")
+	check(root.get_visible_rect().encloses(flow.overlay_controller.overlay_panel.get_global_rect()), "Shop panel stays inside screen")
 	shop.move_selection_2d(1, 0)
 	await settle_layout()
 	var indices: Array[int] = shop._get_shop_item_indices_for_category(2)
 	var first_panel: Control = shop.shop_item_panel_by_index[indices.front()]
 	check(selection_visible(), "First selection is visible")
+	var scroll_rect: Rect2 = shop.shop_scroll.get_global_rect()
+	for index in range(mini(6, indices.size())):
+		check(scroll_rect.encloses(shop.shop_item_panel_by_index[indices[index]].get_global_rect()), "Both first rows are completely visible")
+	shop.move_selection_2d(0, 1)
+	await settle_layout()
+	check(shop.shop_scroll.scroll_vertical == 0, "Moving to second row does not jerk the scroll position")
+	shop.move_selection_2d(0, -1)
+	await settle_layout()
+	if OS.get_cmdline_user_args().has("--capture"):
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://_artifact_work/tutorial/shop_two_rows.png")
 	# Walk each row through the real input route, rather than just checking
 	# the selected index while every panel still has its default position.
 	for row in range(int((indices.size() - 1) / 3)):

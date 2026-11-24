@@ -175,20 +175,22 @@ func build_overlay(
 	shop_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shop_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	shop_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	shop_scroll.custom_minimum_size = Vector2(0.0, 520.0)
+	shop_scroll.custom_minimum_size = Vector2(0.0, 574.0)
+	shop_scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	shop_root.add_child(shop_scroll)
 
 	var shop_item_grid_center := CenterContainer.new()
 	shop_item_grid_center.process_mode = Node.PROCESS_MODE_ALWAYS
 	shop_item_grid_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	shop_item_grid_center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	shop_item_grid_center.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	shop_scroll.add_child(shop_item_grid_center)
 
 	shop_item_list = GridContainer.new()
 	shop_item_list.process_mode = Node.PROCESS_MODE_ALWAYS
 	shop_item_list.columns = 3
 	shop_item_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	shop_item_list.add_theme_constant_override("separation", 14)
+	shop_item_list.add_theme_constant_override("h_separation", 14)
+	shop_item_list.add_theme_constant_override("v_separation", 14)
 	shop_item_grid_center.add_child(shop_item_list)
 
 	debug_label = Label.new()
@@ -360,6 +362,16 @@ func set_layout_mode(is_selection_layout: bool) -> void:
 		overlay_body_label.add_theme_font_size_override("font_size", 20)
 		overlay_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		overlay_hint_label.add_theme_font_size_override("font_size", 18)
+
+func set_shop_layout() -> void:
+	# Leave exactly two complete 280px rows plus the 14px row gap.
+	overlay_panel.offset_top = 70.0
+	overlay_panel.offset_bottom = -50.0
+	overlay_content.offset_top = 24.0
+	overlay_content.offset_bottom = -24.0
+	overlay_content.alignment = BoxContainer.ALIGNMENT_BEGIN
+	overlay_content.add_theme_constant_override("separation", 10)
+	overlay_title_label.add_theme_font_size_override("font_size", 36)
 
 func set_overlay_visible(visible: bool) -> void:
 	if overlay_layer != null:

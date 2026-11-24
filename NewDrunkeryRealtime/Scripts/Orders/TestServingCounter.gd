@@ -460,8 +460,8 @@ func _update_prompt_layer() -> void:
 
 	for i in range(slot_count):
 		var prompt_data: Dictionary = {}
-		var is_waiting: bool = waiting_order_by_slot.has(i)
 		var is_active: bool = active_order_by_slot.has(i)
+		var is_waiting: bool = waiting_order_by_slot.has(i) and not is_active
 		if is_active:
 			prompt_data = active_order_by_slot[i]
 		elif is_waiting:

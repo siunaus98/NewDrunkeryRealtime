@@ -309,7 +309,7 @@ func _refresh_night_shop_overlay() -> void:
 	_refresh_shop_category_tabs()
 	_refresh_shop_item_list()
 	if overlay_body_label != null:
-		overlay_body_label.text = "当前金币：%d\n%s" % [
+		overlay_body_label.text = "金币：%d    ·    %s" % [
 			get_current_gold(),
 			pending_shop_message if pending_shop_message != "" else "浏览当前分类的商品。"
 		]

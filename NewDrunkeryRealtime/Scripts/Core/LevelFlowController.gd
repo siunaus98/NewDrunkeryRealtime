@@ -1461,6 +1461,7 @@ func _open_night_shop_overlay() -> void:
 	get_tree().paused = true
 	_set_blessing_overlay_visible(false)
 	_set_overlay_layout_mode(true)
+	overlay_controller.set_shop_layout()
 	_set_overlay_visible(true)
 	if night_shop_controller != null and night_shop_controller.has_method("prepare_for_open"):
 		night_shop_controller.prepare_for_open(progression_state)

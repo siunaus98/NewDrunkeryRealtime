@@ -66,7 +66,8 @@ var hit_feedback_tween: Tween
 var base_sprite_position: Vector2 = Vector2.ZERO
 var base_sprite_scale: Vector2 = Vector2.ONE
 var blessing_controller: RefCounted
-const DOWNED_DURATION: float = 10.0
+const DOWNED_DURATION: float = 15.0
+const REVIVE_HEALTH_FRACTION: float = 0.10
 var downed_remaining: float = 0.0
 var revive_immunity_remaining: float = 0.0
 var downed_label: Label
@@ -280,7 +281,7 @@ func tick_downed(delta: float) -> void:
 	downed_remaining = maxf(downed_remaining - maxf(delta, 0.0), 0.0)
 	_update_downed_label()
 	if not is_downed():
-		current_health = 1
+		current_health = maxi(ceili(float(get_current_max_health()) * REVIVE_HEALTH_FRACTION), 1)
 		revive_immunity_remaining = 1.0
 		if sprite != null:
 			sprite.modulate = Color.WHITE

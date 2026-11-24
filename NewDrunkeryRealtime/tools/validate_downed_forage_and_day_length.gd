@@ -81,7 +81,7 @@ func run() -> void:
 	combat.is_attack_button_held = true
 	var origin: Vector2 = actor.global_position
 	check(actor.take_damage(1000, Vector2.RIGHT), "Fatal damage is applied")
-	check(actor.is_downed() and combat.current_health == 0 and is_equal_approx(combat.downed_remaining, 10), "Fatal damage starts ten-second zero-health stun")
+	check(actor.is_downed() and combat.current_health == 0 and is_equal_approx(combat.downed_remaining, 15), "Fatal damage starts fifteen-second zero-health stun")
 	Input.action_press("move_right")
 	Input.action_press("primary_attack")
 	Input.action_press("dash")
@@ -98,36 +98,38 @@ func run() -> void:
 	check(not actor.skill_controller.try_activate_small() and not actor.skill_controller.try_activate_big(), "Neither skill can bypass fatal stun")
 	actor.heal_for_blessings(100)
 	check(combat.current_health == 0, "Healing cannot bypass downed timer")
-	check(not actor.take_damage(1000, Vector2.LEFT) and combat.downed_remaining == 10, "Further hits do not restart stun")
+	check(not actor.take_damage(1000, Vector2.LEFT) and combat.downed_remaining == 15, "Further hits do not restart stun")
 	actor.apply_contact_push(Vector2.RIGHT, 100)
 	actor.apply_conveyor_motion(Vector2(100, 0))
 	actor.apply_quicksand_spawn_pull(origin + Vector2(100, 0), 100)
 	check(not actor.apply_wind_sand_jump(Vector2(100, 0)) and not actor.apply_storm_launch(Vector2.RIGHT, 300, 20, 2, null), "Downed body ignores hostile and wind-pad displacement")
 	actor._physics_process(1.0)
 	check(actor.global_position.is_equal_approx(origin), "Downed player remains at the same world position")
-	actor._process(9.99)
+	actor._process(14.99)
 	check(actor.is_downed() and combat.current_health == 0, "No early revival or passive regeneration")
 	actor._process(0.02)
-	check(not actor.is_downed() and combat.current_health == 1 and not combat.downed_label.visible and actor.global_position.is_equal_approx(origin), "Revives with exactly one health in place")
+	check(not actor.is_downed() and combat.current_health == ceili(actor.get_current_max_health() * .1) and not combat.downed_label.visible and actor.global_position.is_equal_approx(origin), "Revives with ten percent max health in place")
 	check(not actor.take_damage(20), "Brief revival protection prevents immediate repeated knockdown")
 	combat.tick_cooldowns(1.01)
 	combat.bonus_health_regen = 0
 	combat.current_health = 1
 	check(actor.take_damage(1000) and actor.is_downed(), "Later fatal hit starts a fresh downed cycle")
-	# Night reset must cancel a pending revival, not restore one health later.
+	# Night reset must cancel a pending revival, not overwrite full health later.
 	flow._enter_night_rest()
 	check(not actor.is_downed() and combat.current_health == actor.get_current_max_health(), "Night fills health and cancels downed state")
 	paused = false
-	actor._process(12)
+	actor._process(16)
 	check(combat.current_health == actor.get_current_max_health(), "Old revival timer cannot overwrite night healing")
 	# Held dishes and their plate payload survive the stun; night reset has its
 	# existing independent cleanup rules.
 	actor.clear_held_item()
 	actor.pick_up_item(Items.MEAT_RED_ID, Items.get_item_texture(Items.MEAT_RED_ID))
+	combat.add_shop_max_health_bonus(37)
 	combat.current_health = 1
 	actor.take_damage(1000)
-	actor._process(10)
-	check(actor.get_held_item_id() == Items.MEAT_RED_ID and combat.current_health == 1, "Held ingredient survives knockdown and revival")
+	actor._process(15)
+	check(actor.get_held_item_id() == Items.MEAT_RED_ID and combat.current_health == ceili(actor.get_current_max_health() * .1), "Held ingredient survives knockdown and revival")
+	check(combat.current_health > 10, "Revival scales with upgraded max health and rounds up")
 	actor.clear_held_item()
 	combat.reset_temporary_state()
 	# Existing once-per-day fatal protection resolves before knockdown.

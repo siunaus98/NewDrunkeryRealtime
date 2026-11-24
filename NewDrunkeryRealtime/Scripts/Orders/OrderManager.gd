@@ -278,6 +278,7 @@ func complete_current_order(slot_number: int = -1, exact_recipe: bool = true, or
 	if is_inside_tree():
 		preload("res://Scripts/Player/UltimateEnergyRules.gd").award_team(get_tree(), &"serve")
 	order_completed.emit(completed)
+	_emit_waiting_orders_changed()
 	_emit_orders_changed()
 	if bool(completed.get("special_guest", false)) and customer_finished:
 		special_guest_active = false
