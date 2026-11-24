@@ -393,8 +393,6 @@ func _process(delta: float) -> void:
 				else:
 					_enter_result(true, "营业时间结束。")
 				return
-			if order_hud != null and order_hud.has_method("set_intermission"):
-				order_hud.set_intermission(wave_break_time_remaining, run_context.current_wave_index + 1)
 			if wave_break_time_remaining <= 0.0:
 				_start_wave_phase()
 
@@ -838,8 +836,6 @@ func _start_wave_phase() -> void:
 		return
 	service_started = true
 	_start_map_mechanisms(true)
-	if order_hud != null:
-		order_hud.clear_wave_status()
 	if battle_manager != null and battle_manager.has_method("start_wave"):
 		battle_manager.start_wave(0, {}, run_context.selected_order_group)
 	_tick_customer_arrivals(0.0)
@@ -869,8 +865,6 @@ func _arrive_special_guest() -> void:
 		return
 	order_manager.add_orders(orders)
 	run_context.special_guest_arrived = true
-	if order_hud != null:
-		order_hud.clear_wave_status()
 
 func _on_order_completed(order_data: Dictionary) -> void:
 	if run_context == null or _get_state() != LevelContext.LevelState.WAVE_ACTIVE:
@@ -977,8 +971,6 @@ func _enter_wave_break() -> void:
 	wave_break_time_remaining = float(selected_group.get("wave_break_duration", wave_break_duration_default))
 	if battle_manager != null and battle_manager.has_method("end_wave"):
 		battle_manager.end_wave()
-	if order_hud != null and order_hud.has_method("set_intermission"):
-		order_hud.set_intermission(wave_break_time_remaining, run_context.current_wave_index + 1)
 
 func _create_pending_menu_dish_offer() -> void:
 	if progression_state == null:

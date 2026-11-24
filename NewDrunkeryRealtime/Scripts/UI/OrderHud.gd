@@ -8,7 +8,6 @@ const LevelRefs = preload("res://Scripts/Core/LevelRefs.gd")
 @export var card_row_spacing: float = 12.0
 @export var screen_margin: Vector2 = Vector2(24.0, 0.0)
 @export var relayout_animation_duration: float = 0.18
-@export var wave_status_height: float = 34.0
 
 @onready var container: MarginContainer = $MarginContainer
 @onready var order_panel: Panel = $MarginContainer/OrderCard
@@ -16,12 +15,10 @@ const LevelRefs = preload("res://Scripts/Core/LevelRefs.gd")
 var order_cards: Dictionary = {}
 var order_customer_ids: Dictionary = {}
 var cards_root: Control
-var wave_status_label: Label
 var order_manager: Node
 var is_expanded: bool = true
 var is_transitioning_visibility: bool = false
 var relayout_tween: Tween
-var current_wave_number: int = 0
 
 func _ready() -> void:
 	layer = 30
@@ -30,10 +27,6 @@ func _ready() -> void:
 	cards_root.name = "CustomerCards"
 	cards_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(cards_root)
-	wave_status_label = Label.new()
-	wave_status_label.position = screen_margin
-	wave_status_label.add_theme_font_size_override("font_size", 24)
-	add_child(wave_status_label)
 	var refs := LevelRefs.find_from(self)
 	order_manager = refs.get_order_manager() if refs != null else null
 	if order_manager != null:
@@ -56,23 +49,9 @@ func clear_orders() -> void:
 		card.queue_free()
 	order_cards.clear()
 	order_customer_ids.clear()
-	_update_wave_status("", false)
 
-func set_orders(order_list: Array, wave_number: int = 0) -> void:
+func set_orders(order_list: Array, _wave_number: int = 0) -> void:
 	_sync_orders(order_list)
-	if wave_number > 0 and not order_list.is_empty():
-		set_wave_number(wave_number)
-
-func set_intermission(time_remaining: float, next_wave_number: int) -> void:
-	clear_orders()
-	_update_wave_status("间歇 %.1f 秒 → 第%d波" % [time_remaining, next_wave_number], true)
-
-func clear_wave_status() -> void:
-	_update_wave_status("", false)
-
-func set_wave_number(wave_number: int) -> void:
-	current_wave_number = maxi(wave_number, 0)
-	_update_wave_status("第%d波" % current_wave_number, current_wave_number > 0)
 
 func has_active_order() -> bool:
 	return not order_cards.is_empty()
@@ -281,7 +260,6 @@ func _relayout_cards(immediate: bool = true) -> void:
 	# Use the full top edge for customer orders. The wave label is secondary and
 	# remains visible only while there are no cards to avoid a dead top strip.
 	cards_root.position = Vector2(screen_margin.x, 0.0)
-	wave_status_label.visible = order_cards.is_empty() and current_wave_number > 0
 	var available_width := maxf(get_viewport().get_visible_rect().size.x - screen_margin.x * 2, card_size.x)
 	var columns := maxi(int(floor((available_width + card_spacing) / (card_size.x + card_spacing))), 1)
 	var index: int = 0
@@ -318,10 +296,6 @@ func _stop_relayout_tween() -> void:
 		relayout_tween = null
 	is_transitioning_visibility = false
 
-func _update_wave_status(text: String, visible: bool) -> void:
-	if wave_status_label != null:
-		wave_status_label.text = text
-		wave_status_label.visible = visible and order_cards.is_empty()
 
 func _style_panel(panel: Panel, background: Color, border: Color, border_width: int) -> void:
 	var style := StyleBoxFlat.new()
