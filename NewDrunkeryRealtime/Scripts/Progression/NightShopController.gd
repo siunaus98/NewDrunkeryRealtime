@@ -328,23 +328,23 @@ func _tier_display_name(tier: StringName) -> String:
 
 func _rebuild_merchant_shop_items() -> void:
 	merchant_shop_items.clear()
-	merchant_shop_items.append(_build_stat_shop_item(&"random_forge", "随机属性锻造器", "随机获得白银、黄金或钻石品质。购买后从三个不同属性中选择一个。", 45, "三选一，不可刷新"))
-	merchant_shop_items.append(_build_stat_shop_item(&"diamond_forge", "钻石属性锻造器", "必定获得钻石品质高级词条。购买后从三个不同属性中选择一个。", 120, "三选一，不可刷新"))
-	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"magic_capacity", "蓝晶酒袋", "魔力上限 +1，增加战斗技能的施放余量。", 13, "魔力上限提高"))
-	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"magic_regen", "泉眼滤芯", "魔力恢复速度提高 12%。运营越忙，收益越明显。", 15, "魔力恢复更快"))
-	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"station_speed", "厨具改良", "所有现有及之后购买的料理台加工速度提高 15%。烤台熟成窗口也会相应缩短。", 24, "加工速度提高"))
+	merchant_shop_items.append(_build_stat_shop_item(&"random_forge", "随机属性锻造器", "获得随机品质的属性强化。", 45, "购买后选择强化"))
+	merchant_shop_items.append(_build_stat_shop_item(&"diamond_forge", "钻石属性锻造器", "获得高品质的属性强化。", 120, "购买后选择强化"))
+	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"magic_capacity", "蓝晶酒袋", "提高魔力上限。", 13, "魔力上限提高"))
+	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"magic_regen", "泉眼滤芯", "加快魔力恢复。", 15, "魔力恢复更快"))
+	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"station_speed", "厨具改良", "提高料理台的加工效率。", 24, "加工速度提高"))
 	merchant_shop_items.append(_build_facility_shop_item(&"cut_station", "切菜台", "将生食材加工为切片。", 24, "购入新料理台"))
 	merchant_shop_items.append(_build_facility_shop_item(&"roast_station", "烤台", "自动烤制食材，过久会焦糊。", 30, "购入新料理台"))
-	merchant_shop_items.append(_build_facility_shop_item(&"grind_station", "研磨台", "将食材研磨为4份小料。", 28, "购入新料理台"))
+	merchant_shop_items.append(_build_facility_shop_item(&"grind_station", "研磨台", "将食材研磨成小料。", 28, "购入新料理台"))
 	merchant_shop_items.append(_build_facility_shop_item(&"prep_table", "备料桌", "存放食材、小料盒与盘子。", 10, "增加备料空间"))
 	merchant_shop_items.append(_build_frozen_food_shop_item())
-	merchant_shop_items.append(_build_facility_shop_item(&"conveyor", "履带", "占地两格，沿固定方向运输物品与玩家。", 14, "推动玩家/物品"))
-	merchant_shop_items.append(_build_facility_shop_item(&"lamp", "明光灯", "范围内加工、酿造、净化与培养效率+22%，并加速履带与摇摇车。", 16, "光照范围内效率 +22%"))
+	merchant_shop_items.append(_build_facility_shop_item(&"conveyor", "履带", "沿固定方向运送物品和玩家。", 14, "推动玩家/物品"))
+	merchant_shop_items.append(_build_facility_shop_item(&"lamp", "明光灯", "提高附近设施的工作效率。", 16, "附近设施效率提高"))
 	for entry: Dictionary in preload("res://Scripts/Facilities/FacilityCatalog.gd").ENTRIES:
 		var id := StringName(entry.id)
 		var count: int = progression_state.get_stat_purchase_count(StringName("facility_%s" % id)) if progression_state != null else 0
 		if preload("res://Scripts/Facilities/FacilityCatalog.gd").available(id, count):
-			merchant_shop_items.append(_build_facility_shop_item(id, String(entry.name), String(entry.detail), int(entry.cost) + (count * 12 if id == &"culture" else 0), "限购%d" % int(entry.limit) if int(entry.limit) > 0 else "可重复购买"))
+			merchant_shop_items.append(_build_facility_shop_item(id, String(entry.name), String(entry.shop_description), int(entry.cost) + (count * 12 if id == &"culture" else 0), "限购%d" % int(entry.limit) if int(entry.limit) > 0 else "可重复购买"))
 	var repair_item: Dictionary = _build_forklift_repair_item()
 	if not repair_item.is_empty():
 		merchant_shop_items.append(repair_item)
@@ -363,7 +363,7 @@ func _build_forklift_repair_item() -> Dictionary:
 		return {}
 	return {
 		"id": &"forklift_repair", "type": &"forklift_repair", "category": &"facilities",
-		"title": "修理铲车", "description": "恢复铲车全部耐久，每损失%d点耐久花费1金币。" % vehicle.REPAIR_HEALTH_PER_GOLD,
+		"title": "修理铲车", "description": "修复受损的铲车。",
 		"cost": vehicle.get_repair_cost(), "state_text": "当前耐久 %d/%d" % [vehicle.health, vehicle.MAX_HEALTH]
 	}
 
@@ -490,7 +490,7 @@ func _build_frozen_food_shop_item() -> Dictionary:
 		"type": &"frozen_food",
 		"category": &"frozen",
 		"title": "冷冻%s" % TestItemDefs.get_item_display_name(selected_item_id),
-		"description": "购买 3 份冷冻食材。冷冻库存不会在营业结束后减半。",
+		"description": "补充食材，冷冻储存便于留到以后使用。",
 		"cost": 9,
 		"state_text": "会立刻送入冷冻库存",
 		"item_id": selected_item_id,
