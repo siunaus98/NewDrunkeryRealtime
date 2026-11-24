@@ -54,11 +54,10 @@ const LAYOUTS = [
 	{}
 ]
 const MAP_SIZES = [Vector2(1152, 768), Vector2(1280, 768), Vector2(1408, 896), Vector2(1152, 768), Vector2(1152, 768), Vector2(1280, 768), Vector2(768, 640), Vector2(1024, 768), Vector2(1152, 768), Vector2(1152, 768), Vector2(1280, 768), Vector2(1280, 768)]
-const GUIDE_POSITIONS = [Vector2(1088, 704), Vector2(1088, 704), Vector2(1280, 832), Vector2(960, 704), Vector2(960, 704), Vector2(1152, 704), Vector2(640, 512), Vector2(896, 640), Vector2(1024, 640), Vector2(896, 768), Vector2(1152, 640), Vector2(1152, 704)]
 var highlight_clock := 0.0
 var target_label: Label
 var last_guide_text := ""
-var guide_npc: Node2D
+var guide_portrait: Control
 
 func setup(scene: Node) -> void:
 	main = scene
@@ -126,6 +125,9 @@ func _build_hud() -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 25)
 	margin.add_child(row)
+	guide_portrait = preload("res://Scripts/Tutorial/TutorialGuideNPC.gd").new()
+	guide_portrait.name = "GuidePortrait"
+	row.add_child(guide_portrait)
 	var column := VBoxContainer.new()
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_theme_constant_override("separation", 8)
@@ -303,7 +305,6 @@ func _guide(text: String, targets: Array = []) -> void:
 	if text != last_guide_text:
 		last_guide_text = text
 		lesson_body.text = "小沙：" + text
-		if is_instance_valid(guide_npc): guide_npc.set_current_hint(text)
 	for node: Node2D in highlight_nodes:
 		if is_instance_valid(node):
 			node.modulate = Color.WHITE
@@ -312,12 +313,11 @@ func _guide(text: String, targets: Array = []) -> void:
 	for target in targets:
 		var node: Node = main.get_node_or_null(target) if target is String else target
 		if is_instance_valid(node): highlight_nodes.append(node)
-	if is_instance_valid(guide_npc): guide_npc.set_pickup_drop_highlight(false)
 
 
 func _update_current_instruction() -> void:
 	if ready_to_advance and step != BOSS:
-		_guide("料理做好了，先留在组合台上。按 Enter 到下一关学习装盘和上菜。" if step == 0 else ("本关完成！按 Enter 进入下一张教学地图。" if step < BOSS else "教学完成！按 Enter 返回标题，开始正式冒险。"))
+		_guide("料理做好了，先留在组合台上。按 Enter 到下一关学习装盘和上菜。" if step == 0 else ("本关拿下！厨房暂时安全了。按 Enter 去下一关。" if step < BOSS else "教学完成！按 Enter 返回标题，开始正式冒险。"))
 		return
 	match step:
 		0: _guide_cooking()
@@ -327,7 +327,7 @@ func _update_current_instruction() -> void:
 				if _holds(Items.PLATE_ID): _guide("面对组合台按 J，将上一关做好的脆芽冷盘装进盘子。", ["AssemblyStation"])
 				else: _guide("非酒水菜需要净盘。走到左侧盘架，空手按 J 取一个净盘。", [main.get_node("PlateSink").rack])
 			elif not events.has(&"serve"): _guide("面对上菜口按 J 交付脆芽冷盘，上菜可获得金币和经验。", ["TestServingCounter"])
-			else: _guide("脏盘 J 放入右侧净化池，再空手按住 J 清洗。净盘会回到左侧盘架。", ["PlateSink"])
+			else: _guide("盘子也要洗个澡：J 放进右侧净化池，再空手按住 J 清洗；净盘会回到左侧盘架。", ["PlateSink"])
 		2:
 			if not events.has(&"roast_taken"):
 				_guide("烤条旁 1=微生、2=半熟、3=全熟；第4段走完就烤糊了！箱子 J 取碎金子放烤台，等全熟 J 取走。", ["BakeCooker"] if _holds(Items.RICE_ID) or main.get_node("BakeCooker").has_item else ["StorageCabinetGoldenWheat"])
@@ -387,7 +387,7 @@ func _guide_cooking() -> void:
 	elif _holds(Items.VEG_LEAF_ID, Items.PROCESS_STATE_CUT): _guide("面对组合台按 J 放入切芽。脆芽冷盘需要两份切芽。", ["AssemblyStation"])
 	elif station.has_item:
 		if station.processing_active: _guide("面对切台连按 K 切配；完成后食材会留在台上。", ["TestCooker"])
-		else: _guide("切配完成。面对切台按 J，主动取走切好的脆芽。", ["TestCooker"])
+		else: _guide("切配完成！脆芽不会自己跳进手里，面对切台按 J 主动取走吧。", ["TestCooker"])
 	elif _holds(Items.VEG_LEAF_ID): _guide("面对切台按 J 放入脆芽，准备切配。", ["TestCooker"])
 	else: _guide("WASD 移动。到脆芽箱空手按 J 取料。目标：切芽 ×2 → 组合成冷盘。", ["StorageCabinetCrispSprout"])
 
@@ -436,16 +436,9 @@ func _build_lesson_map() -> void:
 	for node: Node in lesson_nodes:
 		if is_instance_valid(node): node.free()
 	lesson_nodes.clear()
-	if is_instance_valid(guide_npc): guide_npc.free()
-	guide_npc = null
 	var map: Node = main.get_node("PrototypeMap")
 	lesson_bounds = Rect2(Vector2(128, 128), MAP_SIZES[step])
 	map.configure_tutorial_lesson(step, lesson_bounds, step in [FORAGE, COMBAT])
-	guide_npc = preload("res://Scripts/Tutorial/TutorialGuideNPC.gd").new()
-	guide_npc.name = "TutorialGuideNPC"
-	guide_npc.tutorial = self
-	guide_npc.position = Vector2.ZERO
-	main.add_child(guide_npc)
 	for name: String in LAYOUTS[step]:
 		var template_name := "TestTable" if name in ["TutorialDishTable", "TutorialMainTable", "TutorialPrepTableA", "TutorialPrepTableB"] else name
 		var node: Node2D = preload("res://Scripts/Tutorial/TutorialRecipeBook.gd").new() if name == "RecipeBook" else facility_templates[template_name].instantiate()
@@ -459,7 +452,6 @@ func _build_lesson_map() -> void:
 			node.scale = Vector2(.44, .25)
 		main.add_child(node)
 		lesson_nodes.append(node)
-	_place_guide(map)
 	var refs: Node = main.get_node("LevelRefs")
 	refs.station_paths.clear()
 	for node: Node in lesson_nodes:
@@ -474,22 +466,6 @@ func _build_lesson_map() -> void:
 	camera.global_position = lesson_bounds.get_center() + Vector2(-100 if LAYOUTS[step].has("TestServingCounter") else 0, 75)
 	camera.reset_smoothing()
 	camera.force_update_scroll()
-
-func _place_guide(map: Node2D) -> void:
-	var candidates: Array[Vector2] = []
-	var tile: Vector2 = map.tile_size
-	for y in range(int(lesson_bounds.position.y / tile.y), int(lesson_bounds.end.y / tile.y)):
-		for x in range(int(lesson_bounds.position.x / tile.x), int(lesson_bounds.end.x / tile.x)):
-			var center := map.to_global((Vector2(x, y) + Vector2.ONE * .5) * tile)
-			var clear := true
-			for prop: Node2D in lesson_nodes:
-				var size := Vector2(128, 128)
-				if prop.has_method("get_layout_footprint"): size = Vector2(prop.get_layout_footprint()) * tile
-				if Rect2(prop.global_position - size * .5, size).grow(60).has_point(center): clear = false
-			if clear: candidates.append(center)
-	var preferred: Vector2 = GUIDE_POSITIONS[step]
-	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_squared_to(preferred) < b.distance_squared_to(preferred))
-	guide_npc.global_position = candidates[0] if not candidates.is_empty() else map.to_global((Vector2(map.get_cell_for_point(lesson_bounds.get_center())) + Vector2.ONE * .5) * tile)
 
 func _prepared_dish(id: StringName) -> Dictionary:
 	var components: Array[Dictionary] = []

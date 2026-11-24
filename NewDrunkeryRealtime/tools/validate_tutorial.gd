@@ -37,16 +37,11 @@ func cut(id: StringName) -> void:
 func check_lesson_layout() -> void:
 	var expected: Dictionary = tutorial.LAYOUTS[tutorial.step]
 	var map: Node = main.get_node("PrototypeMap")
-	var guide: Node = main.get_node_or_null("TutorialGuideNPC")
-	check(is_instance_valid(guide) and guide.is_visible_in_tree(), "Each lesson has a visible angel guide NPC")
-	check(map.is_point_in_playable_area(guide.global_position), "Angel guide stands on the current lesson map")
-	var cell_center: Vector2 = map.to_global((Vector2(map.get_cell_for_point(guide.global_position)) + Vector2(.5, .5)) * map.tile_size)
-	check(guide.global_position.is_equal_approx(cell_center), "Angel stands at tile center")
-	for prop: Node2D in tutorial.lesson_nodes:
-		var footprint := Vector2(128, 128)
-		if prop.has_method("get_layout_footprint"): footprint = Vector2(prop.get_layout_footprint()) * map.tile_size
-		check(not Rect2(prop.global_position - footprint * .5, footprint).grow(60).has_point(guide.global_position), "Angel clears facility footprint: " + String(prop.name))
-	check(not guide.is_in_group("pickup_drop_targets") or guide.get_interaction_button_prompt(actor) == "", "Guide is passive and speaks through the bottom tutorial bar")
+	check(main.get_node_or_null("TutorialGuideNPC") == null, "Tutorial has no world guide NPC")
+	var portrait: Control = tutorial.guide_portrait
+	check(is_instance_valid(portrait) and tutorial.panel.is_ancestor_of(portrait), "Head and hands portrait belongs to bottom dialogue")
+	check(portrait.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Portrait never intercepts tutorial controls")
+	check(not portrait.get_global_rect().intersects(tutorial.lesson_body.get_global_rect()), "Portrait and instructions do not overlap")
 	check(map.map_regions.size() == 1 and map.get_world_bounds().size == tutorial.MAP_SIZES[tutorial.step], "Lesson has its own compact map")
 	for name: String in tutorial.facility_templates:
 		check(is_instance_valid(main.get_node_or_null(name)) == expected.has(name), "Lesson %d only instantiates needed facility: %s" % [tutorial.step + 1, name])
