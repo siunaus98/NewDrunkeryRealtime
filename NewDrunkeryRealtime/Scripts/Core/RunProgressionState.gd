@@ -50,6 +50,7 @@ var big_skill_variant: StringName = BigSkillDefs.BASE
 var pending_small_skill_upgrade: bool = false
 var pending_big_skill_upgrade: bool = false
 var seen_blessings: Dictionary = {}
+var seen_mechanism_briefings: Dictionary = {}
 var shop_stat_purchase_counts: Dictionary = {}
 var owned_shop_blessings: Dictionary = {}
 var forged_attributes: Dictionary = {}
@@ -85,6 +86,7 @@ func reset(starting_gold: int, starting_day_index: int = 0, map_mechanism_seed: 
 	pending_small_skill_upgrade = false
 	pending_big_skill_upgrade = false
 	seen_blessings.clear()
+	seen_mechanism_briefings.clear()
 	shop_stat_purchase_counts.clear()
 	owned_shop_blessings.clear()
 	blessings_changed.emit()
@@ -131,6 +133,7 @@ func apply_snapshot(snapshot: Dictionary) -> void:
 	var snapshot_seen_blessings: Variant = snapshot.get("seen_blessings", null)
 	if snapshot_seen_blessings is Dictionary:
 		seen_blessings = snapshot_seen_blessings.duplicate(true)
+	seen_mechanism_briefings = Dictionary(snapshot.get("seen_mechanism_briefings", {})).duplicate(true)
 	var snapshot_owned_blessings: Variant = snapshot.get("owned_blessings", null)
 	if snapshot_owned_blessings is Dictionary:
 		owned_shop_blessings = snapshot_owned_blessings.duplicate(true)
@@ -184,6 +187,7 @@ func get_snapshot() -> Dictionary:
 		"pending_small_skill_upgrade": pending_small_skill_upgrade,
 		"pending_big_skill_upgrade": pending_big_skill_upgrade,
 		"seen_blessings": seen_blessings.duplicate(true),
+		"seen_mechanism_briefings": seen_mechanism_briefings.duplicate(true),
 		"owned_blessings": owned_shop_blessings.duplicate(true),
 		"forged_attributes": forged_attributes.duplicate(true),
 		"map_mechanism_order": map_mechanism_order.duplicate(),

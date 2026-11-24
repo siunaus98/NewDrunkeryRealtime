@@ -340,7 +340,6 @@ func _update_visuals() -> void:
 	# The oblique artwork points upper-left. Rotate with the gameplay
 	# facing, so the glowing rear patch always matches positional damage.
 	sprite.rotation += facing.angle() + 3.0 * PI / 4.0
-	geometry.sync_ground()
 	if eating_remaining > 0.0:
 		sprite.scale = base_sprite_scale * Vector2(1.08, 0.88 + 0.03 * sin(eating_remaining * 9.0))
 	elif tongue != null and (tongue.blocks_boss() or facility_tongue.blocks_boss()):
@@ -353,6 +352,7 @@ func _update_visuals() -> void:
 		var progress := clampf(1.0 - state_remaining / windup_total, 0, 1)
 		sprite.position += attack_direction * (-18.0 * sin(progress * PI) + 28.0 * pow(progress, 3))
 		sprite.scale *= Vector2(1.0 + 0.08 * sin(progress * PI), 1.0 - 0.06 * sin(progress * PI))
+	geometry.sync_ground()
 	if weakpoint_view != null:
 		# Inherit the complete animated body pose, while retaining the marker's
 		# authored world size at the neutral sprite scale.

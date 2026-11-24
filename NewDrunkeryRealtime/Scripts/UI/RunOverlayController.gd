@@ -159,15 +159,15 @@ func build_overlay(
 	shop_root.process_mode = Node.PROCESS_MODE_ALWAYS
 	shop_root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shop_root.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	shop_root.add_theme_constant_override("separation", 18)
+	shop_root.add_theme_constant_override("separation", 12)
 	shop_root.visible = false
 	overlay_content.add_child(shop_root)
 
 	shop_category_tabs = HBoxContainer.new()
 	shop_category_tabs.process_mode = Node.PROCESS_MODE_ALWAYS
-	shop_category_tabs.alignment = BoxContainer.ALIGNMENT_CENTER
+	shop_category_tabs.alignment = BoxContainer.ALIGNMENT_BEGIN
 	shop_category_tabs.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	shop_category_tabs.add_theme_constant_override("separation", 14)
+	shop_category_tabs.add_theme_constant_override("separation", 12)
 	shop_root.add_child(shop_category_tabs)
 
 	shop_scroll = ScrollContainer.new()
@@ -175,23 +175,16 @@ func build_overlay(
 	shop_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shop_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	shop_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	shop_scroll.custom_minimum_size = Vector2(0.0, 574.0)
-	shop_scroll.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	shop_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_ALWAYS
 	shop_root.add_child(shop_scroll)
-
-	var shop_item_grid_center := CenterContainer.new()
-	shop_item_grid_center.process_mode = Node.PROCESS_MODE_ALWAYS
-	shop_item_grid_center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	shop_item_grid_center.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	shop_scroll.add_child(shop_item_grid_center)
 
 	shop_item_list = GridContainer.new()
 	shop_item_list.process_mode = Node.PROCESS_MODE_ALWAYS
 	shop_item_list.columns = 3
 	shop_item_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	shop_item_list.add_theme_constant_override("h_separation", 14)
-	shop_item_list.add_theme_constant_override("v_separation", 14)
-	shop_item_grid_center.add_child(shop_item_list)
+	shop_item_list.add_theme_constant_override("h_separation", 15)
+	shop_item_list.add_theme_constant_override("v_separation", 15)
+	shop_scroll.add_child(shop_item_list)
 
 	debug_label = Label.new()
 	debug_label.visible = OS.get_cmdline_user_args().has("--debug-ui")
@@ -322,6 +315,7 @@ func set_layout_mode(is_selection_layout: bool) -> void:
 		cards_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 		cards_scroll.scroll_horizontal = 0
 		cards_scroll.scroll_vertical = 0
+	overlay_body_label.visible = true
 
 	if is_selection_layout:
 		overlay_panel.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -364,14 +358,26 @@ func set_layout_mode(is_selection_layout: bool) -> void:
 		overlay_hint_label.add_theme_font_size_override("font_size", 18)
 
 func set_shop_layout() -> void:
-	# Leave exactly two complete 280px rows plus the 14px row gap.
-	overlay_panel.offset_top = 70.0
-	overlay_panel.offset_bottom = -50.0
-	overlay_content.offset_top = 24.0
-	overlay_content.offset_bottom = -24.0
+	# About 85% of the previous shop footprint, with two complete product rows.
+	toast_time_remaining = 0.0
+	if toast_label != null:
+		toast_label.hide()
+	overlay_panel.offset_left = 185.0
+	overlay_panel.offset_right = -185.0
+	overlay_panel.offset_top = 115.0
+	overlay_panel.offset_bottom = -115.0
+	overlay_content.offset_left = 30.0
+	overlay_content.offset_right = -30.0
+	overlay_content.offset_top = 20.0
+	overlay_content.offset_bottom = -20.0
 	overlay_content.alignment = BoxContainer.ALIGNMENT_BEGIN
 	overlay_content.add_theme_constant_override("separation", 10)
-	overlay_title_label.add_theme_font_size_override("font_size", 36)
+	overlay_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	overlay_title_label.add_theme_font_size_override("font_size", 34)
+	overlay_body_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	overlay_body_label.add_theme_font_size_override("font_size", 21)
+	overlay_hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	overlay_hint_label.add_theme_font_size_override("font_size", 20)
 
 func set_overlay_visible(visible: bool) -> void:
 	if overlay_layer != null:

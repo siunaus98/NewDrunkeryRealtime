@@ -10,6 +10,7 @@ var blessing_timer_bar_frame: ColorRect
 var blessing_cards_root: HBoxContainer
 var blessing_card_panels: Array[Panel] = []
 var cards_scroll: ScrollContainer
+var card_font_scale: float = 1.4
 
 var order_groups: Array[Dictionary] = []
 var current_menu_dish_ids: Array[StringName] = []
@@ -167,7 +168,7 @@ func refresh_cards() -> void:
 		var day_index: int = int(card_data.get("day_index", 0)) + 1
 		var badge := Label.new()
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		badge.add_theme_font_size_override("font_size", 18)
+		badge.add_theme_font_size_override("font_size", roundi(18 * card_font_scale))
 		badge.modulate = Color(1.0, 0.92, 0.72, 0.96)
 		badge.text = String(card_data.get("badge_text", "第%d天" % day_index))
 		content.add_child(badge)
@@ -175,14 +176,14 @@ func refresh_cards() -> void:
 		var title := Label.new()
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		title.add_theme_font_size_override("font_size", 27)
+		title.add_theme_font_size_override("font_size", roundi(27 * card_font_scale))
 		title.text = String(card_data.get("display_name", "未知关卡"))
 		content.add_child(title)
 
 		var description := Label.new()
 		description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		description.add_theme_font_size_override("font_size", 19)
+		description.add_theme_font_size_override("font_size", roundi(19 * card_font_scale))
 		description.modulate = Color(0.9, 0.92, 0.94, 0.88)
 		description.text = String(card_data.get("description", ""))
 		content.add_child(description)
@@ -190,17 +191,10 @@ func refresh_cards() -> void:
 		var detail := Label.new()
 		detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		detail.add_theme_font_size_override("font_size", 18)
+		detail.add_theme_font_size_override("font_size", roundi(18 * card_font_scale))
 		detail.modulate = Color(0.96, 0.96, 0.9, 0.9)
-		detail.text = "波次 %d / 订单 %d\n当前菜单：%s\n需要肉类：%s\n需要采集：%s" % [
-			_get_wave_count(card_data),
-			_get_total_order_count(card_data),
-			", ".join(_stringify_id_list(current_menu_dish_ids)),
-			", ".join(_stringify_id_list(_collect_menu_items_by_kind(true))),
-			", ".join(_stringify_id_list(_collect_menu_items_by_kind(false)))
-		]
-		if card_data.has("detail_text"):
-			detail.text = String(card_data.detail_text)
+		detail.text = String(card_data.get("detail_text", ""))
+		detail.visible = not detail.text.is_empty()
 		content.add_child(detail)
 
 func _apply_card_style(panel: Panel, is_highlighted: bool) -> void:

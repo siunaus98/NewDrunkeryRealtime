@@ -546,11 +546,11 @@ func _update_visuals() -> void:
 		sprite.scale *= Vector2(1.0 + 0.22 * settle, 1.0 - 0.3 * settle)
 		sprite.rotation = attack_direction.x * 0.25 * settle
 	queue_redraw()
-	geometry.sync_ground()
 	if is_instance_valid(skill_effect_layer):
 		if vulture_skills != null:
 			vulture_skills.update_visuals()
 		skill_effect_layer.queue_redraw()
+	geometry.sync_ground()
 
 func _draw_scorpion_windup() -> void:
 	if boss_kind != MapMechanismDefs.SCARAB or state != AttackState.WINDUP:

@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 signal finished
+signal card_read(card: Dictionary)
 const MINIMUM_SECONDS := 3.0
 var cards: Array[Dictionary] = []
 var index := 0
@@ -11,6 +12,7 @@ var body: Label
 var hint: Label
 var icon: TextureRect
 var page: Label
+var preview: HBoxContainer
 
 func _ready() -> void:
 	layer = 125
@@ -50,10 +52,16 @@ func _ready() -> void:
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	row.add_child(icon)
+	var instructions := VBoxContainer.new()
+	instructions.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	instructions.add_theme_constant_override("separation", 16)
+	row.add_child(instructions)
 	body = _label(28)
-	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	row.add_child(body)
+	instructions.add_child(body)
+	preview = preload("res://Scripts/UI/MechanismPreview.gd").new()
+	instructions.add_child(preview)
 	hint = _label(24)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(hint)
@@ -85,6 +93,7 @@ func _show_card() -> void:
 	body.text = String(cards[index].get("body", ""))
 	var path := String(cards[index].get("image", ""))
 	icon.texture = load(path) if not path.is_empty() else null
+	preview.show_mechanism(StringName(cards[index].get("mechanism_id", &"")))
 	_update_hint()
 
 func _process(delta: float) -> void:
@@ -111,6 +120,7 @@ func _input(event: InputEvent) -> void:
 func advance() -> void:
 	if not visible or elapsed < MINIMUM_SECONDS:
 		return
+	card_read.emit(cards[index])
 	index += 1
 	if index < cards.size():
 		_show_card()

@@ -1,7 +1,7 @@
 extends RefCounted
 
 # Centres use the SVG viewBox coordinates, not scaled world pixels.
-# Movement/contact describe grounded mass. Hurt regions follow the visible pose.
+# Movement uses the smaller body outline; hurt/contact follow the visible pose.
 static func profile(kind: StringName) -> Dictionary:
 	match kind:
 		&"quicksand":

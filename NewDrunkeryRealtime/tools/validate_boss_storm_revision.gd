@@ -137,6 +137,9 @@ func _run() -> void:
 	await physics_frame
 	# A real movable cooker must block flight just like a wall, without becoming
 	# penetrable during the crash or trapping the player after stun ends.
+	# Isolate the cooker test from the vulture's real blocking silhouette.
+	var vulture_before_cooker := vulture.position
+	vulture.position = center + Vector2(1000, 700)
 	var cooker: StaticBody2D = load("res://Scenes/Restaurant/test_cooker.tscn").instantiate()
 	cooker.position = center
 	main.add_child(cooker)
@@ -153,6 +156,7 @@ func _run() -> void:
 	player.move_and_collide(Vector2.LEFT * 30.0)
 	_check(player.position.distance_to(before) > 29.0, "Player can move away from the cooker after stun.")
 	cooker.queue_free()
+	vulture.position = vulture_before_cooker
 	await physics_frame
 	player.reset_temporary_state()
 	player.position = center

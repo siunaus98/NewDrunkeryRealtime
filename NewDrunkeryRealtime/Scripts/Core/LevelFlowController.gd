@@ -25,6 +25,12 @@ const SUPPORT_FACILITY_SCENE := preload("res://Scenes/Restaurant/support_facilit
 const TEST_DAY_ARGUMENT_PREFIX: String = "--test-day="
 const MONITOR_PLAYTEST_ARGUMENT: String = "--test-monitor"
 
+# Temporary short days for reviewing pre-business mechanism and boss cards.
+# Disable this switch to restore the normal preparation and service durations.
+const BRIEFING_PREVIEW_SHORT_DAYS: bool = true
+const BRIEFING_PREVIEW_PREPARE_DURATION: float = 5.0
+const BRIEFING_PREVIEW_SERVICE_DURATION: float = 20.0
+
 # Short service window for the current demo verification pass. This only
 # changes the runtime copy of a selected order group; authored order data and
 # the normal production duration remain unchanged.
@@ -735,14 +741,20 @@ func _update_day_transition(delta: float) -> void:
 	day_transition_active = false
 	if overlay_controller != null and overlay_controller.has_method("set_transition_visible"):
 		overlay_controller.set_transition_visible(false)
-	var cards := preload("res://Scripts/Tutorial/DayBriefingDefs.gd").cards_for_day(run_context.selected_order_group)
+	var cards := preload("res://Scripts/Tutorial/DayBriefingDefs.gd").cards_for_day(run_context.selected_order_group, progression_state.seen_mechanism_briefings)
 	if cards.is_empty():
 		_enter_prepare_phase()
 	else:
 		day_briefing = preload("res://Scripts/UI/ReadinessCards.gd").new()
 		add_child(day_briefing)
+		day_briefing.card_read.connect(_on_briefing_card_read)
 		day_briefing.finished.connect(_enter_prepare_phase, CONNECT_ONE_SHOT)
 		day_briefing.open(cards)
+
+func _on_briefing_card_read(card: Dictionary) -> void:
+	var mechanism_id := StringName(card.get("mechanism_id", &""))
+	if progression_state != null and mechanism_id != &"":
+		progression_state.seen_mechanism_briefings[mechanism_id] = true
 
 func _start_map_mechanisms(start_business: bool) -> void:
 	_ensure_sand_spirit_aid()
@@ -1492,7 +1504,7 @@ func _refresh_order_groups_for_current_day() -> void:
 		var group := template.duplicate(true)
 		group.merge(offer, true)
 		group["day_index"] = day_index
-		group["detail_text"] = "客人逐位到店 · 平均每分钟 %.1f 位\n普通日营业到点成功结算；BOSS 日保留特殊客人收尾。\n当前菜单：%s\n当日难题不影响特殊客人的独立耐心计时。" % [customers_per_minute, ", ".join(progression_state.get_menu_dish_ids().map(func(id: StringName) -> String: return TestItemDefs.get_item_display_name(id)))]
+		group["detail_text"] = ""
 		order_groups.append(group)
 	if overlay_controller != null:
 		overlay_controller.ensure_card_count(order_groups.size())
@@ -1562,6 +1574,9 @@ func _build_order_group_for_current_menu(group_data: Dictionary) -> Dictionary:
 		built_group = OrderGroupDefs.append_boss_special_orders(built_group, StringName(built_group["boss_enhanced_map_mechanism_id"]))
 	elif not FAST_BUSINESS_TEST and not event_multiday_test and progression_state.events.PLAYTEST_BATCH == 0:
 		built_group["service_duration"] = regular_service_duration
+	if BRIEFING_PREVIEW_SHORT_DAYS:
+		built_group["prepare_duration"] = BRIEFING_PREVIEW_PREPARE_DURATION
+		built_group["service_duration"] = BRIEFING_PREVIEW_SERVICE_DURATION
 	if scarab_mechanism_controller != null and scarab_mechanism_controller.has_method("configure_for_level"):
 		scarab_mechanism_controller.configure_for_level(built_group, progression_state)
 	if quicksand_mechanism_controller != null and quicksand_mechanism_controller.has_method("configure_for_level"):

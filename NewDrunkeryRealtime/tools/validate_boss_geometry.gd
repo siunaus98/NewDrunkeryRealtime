@@ -166,19 +166,53 @@ func run() -> void:
 		check(boss.test_move(boss.global_transform, Vector2(50, 0)), "%s actual physics body blocks placed obstacle" % kind)
 		obstacle.queue_free()
 		await physics_frame
-		# Feet/ground stay on the floor while the visible body is lifted for a skill.
+		# Damage and blocking follow the pose; an airborne body has no floor mass.
 		var ground_before: Array[Dictionary] = boss.geometry.regions(&"body")
 		var hurt_before: Array[Dictionary] = boss.get_hurt_regions()
 		boss.sprite.position += Vector2(0, -120)
 		boss.state = boss.AttackState.WINDUP
 		boss.sprite.scale *= Vector2(1.05, .95)
 		boss.geometry.sync_ground()
-		check(circles_equal(ground_before, boss.geometry.regions(&"body")), "%s ground collision does not rise with sprite animation" % kind)
+		check(not circles_equal(ground_before, boss.geometry.regions(&"body")), "%s body collision follows visible displacement" % kind)
 		check(not circles_equal(hurt_before, boss.get_hurt_regions()), "%s hurt regions follow visible animation" % kind)
+		check(not circles_equal(ground_before, boss.geometry.regions(&"contact")), "%s contact regions follow visible animation" % kind)
 		check(not boss.geometry.contact_active(), "%s airborne windup disables old floor contact damage" % kind)
+		await process_frame
+		check(boss.geometry.body_shapes.all(func(shape: CollisionShape2D) -> bool: return shape.disabled), "%s airborne blocking is disabled" % kind)
 		boss.state = boss.AttackState.ACTIVE
 		boss.sprite.position = boss.base_sprite_position
 		boss.sprite.scale = boss.base_sprite_scale
+		boss.geometry.sync_ground()
+		await process_frame
+		check(boss.geometry.body_shapes.all(func(shape: CollisionShape2D) -> bool: return not shape.disabled), "%s landing restores body blocking" % kind)
+		# Exercise the actual displacement animation close to landing, where the
+		# old height-only guard could reactivate invisible contact at the origin.
+		var displacement: int = boss.Attack.LEAP
+		if kind == "vulture":
+			displacement = boss.Attack.DIVE
+		elif kind == "monitor":
+			displacement = boss.Attack.STING
+		boss.attack = displacement
+		boss.state = boss.AttackState.WINDUP
+		boss.attack_target = boss.global_position + Vector2(650, 0)
+		boss.windup_total = 1.0
+		boss.state_remaining = 0.02
+		boss._update_visuals()
+		check(not boss.geometry.contact_active(), "%s remains harmless at the old floor position just before landing" % kind)
+		var contact_now: Dictionary = boss.geometry.regions(&"contact")[0]
+		var expected_center: Vector2 = boss.sprite.to_global(boss.geometry._pixel(boss.geometry.data.contact[0]))
+		check(Vector2(contact_now.position).is_equal_approx(expected_center), "%s real displacement contact follows rendered body" % kind)
+		await process_frame
+		check(boss.geometry.body_shapes.all(func(shape: CollisionShape2D) -> bool: return shape.disabled), "%s real displacement releases starting floor footprint" % kind)
+		boss.state = boss.AttackState.ACTIVE
+		boss._update_visuals()
+		await process_frame
+		# A grounded visual offset must damage only the new visible location.
+		boss.sprite.position += Vector2(900, 0)
+		boss.geometry.sync_ground()
+		check(not boss.geometry.point_in_contact(ground_before[0].position, player_radius), "%s old ground location cannot deal ghost contact damage" % kind)
+		check(boss.geometry.point_in_contact(boss.geometry.regions(&"contact")[0].position), "%s visible displaced body retains contact damage" % kind)
+		boss._update_visuals()
 		# The actual player attack must reach heads/claws, outside the floor mass.
 		var exposed: Dictionary = boss.get_hurt_regions()[boss.get_hurt_regions().size() - 1]
 		if kind == "monitor":

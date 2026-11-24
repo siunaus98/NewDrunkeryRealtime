@@ -69,6 +69,21 @@ func configure_ui(
 	shop_category_tabs = new_shop_category_tabs
 	shop_scroll = new_shop_scroll
 	shop_item_list = new_shop_item_list
+	if shop_scroll != null and not shop_scroll.resized.is_connected(_resize_shop_cards):
+		shop_scroll.resized.connect(_resize_shop_cards)
+
+func _resize_shop_cards() -> void:
+	if shop_scroll == null or shop_item_list == null or shop_scroll.size.y <= 0:
+		return
+	var columns := shop_item_list.columns
+	var h_gap := shop_item_list.get_theme_constant("h_separation")
+	var v_gap := shop_item_list.get_theme_constant("v_separation")
+	var scrollbar_width := shop_scroll.get_v_scroll_bar().get_combined_minimum_size().x
+	var width := floorf((shop_scroll.size.x - scrollbar_width - h_gap * (columns - 1)) / columns)
+	# Fill the viewport with two rows, keeping keyboard movement between them steady.
+	var height := floorf((shop_scroll.size.y - v_gap) * 0.5)
+	for panel: Panel in shop_item_panels:
+		panel.custom_minimum_size = Vector2(maxf(width, 221.0), maxf(height, 238.0))
 
 func set_scene_refs(new_player: Node, new_storage_manager: Node) -> void:
 	player = new_player
@@ -175,7 +190,7 @@ func move_selection_2d(dx: int, dy: int) -> void:
 		_refresh_night_shop_overlay()
 		return
 
-	var columns: int = 3
+	var columns: int = shop_item_list.columns if shop_item_list != null else 3
 	if selected_shop_index < 0 or not category_items.has(selected_shop_index):
 		selected_shop_index = category_items[0]
 		hovered_shop_index = -1
@@ -297,13 +312,14 @@ func _refresh_night_shop_overlay() -> void:
 		if overlay_hint_label != null:
 			overlay_hint_label.text = "方向/WASD：选择属性    Space：确认"
 		if overlay_body_label != null:
+			overlay_body_label.show()
 			overlay_body_label.text = "品质：%s\n%s，请选择一项属性。" % [_tier_display_name(pending_forge_tier), "关卡奖励（免费）" if reward_forge_active else "购买已完成"]
 		return
 	is_refreshing_shop_ui = true
 	if overlay_title_label != null:
 		overlay_title_label.text = "夜间商人"
 	if overlay_hint_label != null:
-		overlay_hint_label.text = "Q/E：切分类    方向/WASD：选商品    鼠标/滚轮可用    Space：购买    K：关闭（Esc 备用）"
+		overlay_hint_label.text = "Q/E 切换分类    方向键/WASD 选择商品    空格购买    K 关闭    支持鼠标与滚轮"
 	if blessing_timer_label != null:
 		blessing_timer_label.visible = false
 	if blessing_timer_bar_frame != null:
@@ -315,10 +331,9 @@ func _refresh_night_shop_overlay() -> void:
 	_refresh_shop_category_tabs()
 	_refresh_shop_item_list()
 	if overlay_body_label != null:
-		overlay_body_label.text = "金币：%d    ·    %s" % [
-			get_current_gold(),
-			pending_shop_message if pending_shop_message != "" else "浏览当前分类的商品。"
-		]
+		overlay_body_label.text = pending_shop_message
+		overlay_body_label.visible = not pending_shop_message.is_empty()
+	_resize_shop_cards()
 	is_refreshing_shop_ui = false
 	_scroll_shop_item_into_view(selected_shop_index)
 
@@ -620,12 +635,13 @@ func _refresh_shop_category_tabs() -> void:
 	if shop_category_tabs == null:
 		return
 	for child in shop_category_tabs.get_children():
+		shop_category_tabs.remove_child(child)
 		child.queue_free()
 
 	var left_hint := Label.new()
 	left_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	left_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	left_hint.custom_minimum_size = Vector2(56.0, 42.0)
+	left_hint.custom_minimum_size = Vector2(48.0, 44.0)
 	left_hint.add_theme_font_size_override("font_size", 20)
 	left_hint.modulate = Color(1.0, 0.9, 0.52, 0.96)
 	left_hint.text = "[Q]"
@@ -637,20 +653,35 @@ func _refresh_shop_category_tabs() -> void:
 		var tab := Label.new()
 		tab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		tab.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		tab.custom_minimum_size = Vector2(180.0, 42.0)
-		tab.add_theme_font_size_override("font_size", 20)
+		tab.custom_minimum_size = Vector2(170.0, 44.0)
+		tab.add_theme_font_size_override("font_size", 23)
 		tab.text = String(category_data.get("title", "Category"))
 		tab.modulate = Color(1.0, 0.9, 0.52, 1.0) if i == selected_shop_category_index else Color(0.78, 0.8, 0.84, 0.92)
+		tab.mouse_filter = Control.MOUSE_FILTER_STOP
+		tab.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		tab.gui_input.connect(func(event: InputEvent) -> void:
+			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+				move_category_selection(i - selected_shop_category_index)
+		)
 		shop_category_tabs.add_child(tab)
 
 	var right_hint := Label.new()
 	right_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	right_hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	right_hint.custom_minimum_size = Vector2(56.0, 42.0)
+	right_hint.custom_minimum_size = Vector2(48.0, 44.0)
 	right_hint.add_theme_font_size_override("font_size", 20)
 	right_hint.modulate = Color(1.0, 0.9, 0.52, 0.96)
 	right_hint.text = "[E]"
 	shop_category_tabs.add_child(right_hint)
+	var wallet := Label.new()
+	wallet.name = "ShopWallet"
+	wallet.text = "金币  %d" % get_current_gold()
+	wallet.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	wallet.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	wallet.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	wallet.add_theme_font_size_override("font_size", 27)
+	wallet.add_theme_color_override("font_color", Color("f4d796"))
+	shop_category_tabs.add_child(wallet)
 
 func _refresh_shop_item_list() -> void:
 	if shop_item_list == null:
@@ -664,6 +695,8 @@ func _refresh_shop_item_list() -> void:
 	shop_item_footer_by_index.clear()
 
 	var item_indices: Array[int] = _get_shop_item_indices_for_category(selected_shop_category_index)
+	# Sparse categories use wider cards, without stretching one item into a strip.
+	shop_item_list.columns = clampi(item_indices.size(), 2, 3)
 	if item_indices.is_empty():
 		var empty_label := Label.new()
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -678,7 +711,7 @@ func _refresh_shop_item_list() -> void:
 		panel.process_mode = Node.PROCESS_MODE_ALWAYS
 		panel.mouse_filter = Control.MOUSE_FILTER_STOP
 		panel.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		panel.custom_minimum_size = Vector2(260.0, 280.0)
+		panel.custom_minimum_size = Vector2(221.0, 238.0)
 		shop_item_list.add_child(panel)
 		shop_item_panels.append(panel)
 		shop_item_panel_by_index[item_index] = panel
@@ -710,25 +743,25 @@ func _refresh_shop_item_list() -> void:
 		var content := MarginContainer.new()
 		content.set_anchors_preset(Control.PRESET_FULL_RECT)
 		content.add_theme_constant_override("margin_left", 20)
-		content.add_theme_constant_override("margin_top", 18)
+		content.add_theme_constant_override("margin_top", 19)
 		content.add_theme_constant_override("margin_right", 20)
-		content.add_theme_constant_override("margin_bottom", 18)
+		content.add_theme_constant_override("margin_bottom", 19)
 		panel.add_child(content)
 
 		var column := VBoxContainer.new()
-		column.add_theme_constant_override("separation", 10)
+		column.add_theme_constant_override("separation", 12)
 		content.add_child(column)
 
 		var title := Label.new()
 		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		title.add_theme_font_size_override("font_size", 26)
+		title.add_theme_font_size_override("font_size", 29)
 		title.text = String(item_data.get("title", "未知商品"))
 		column.add_child(title)
 
 		var cost_label := Label.new()
 		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		cost_label.add_theme_font_size_override("font_size", 24)
+		cost_label.add_theme_font_size_override("font_size", 26)
 		var cost: int = int(item_data.get("cost", 0))
 		var is_affordable: bool = get_current_gold() >= cost
 		cost_label.modulate = Color(1.0, 0.92, 0.56, 1.0) if is_affordable else Color(1.0, 0.52, 0.42, 1.0)
@@ -738,7 +771,9 @@ func _refresh_shop_item_list() -> void:
 		var description := Label.new()
 		description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		description.add_theme_font_size_override("font_size", 19)
+		description.add_theme_font_size_override("font_size", 22)
+		description.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		description.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		description.modulate = Color(0.9, 0.92, 0.94, 0.88)
 		description.text = String(item_data.get("description", ""))
 		column.add_child(description)
@@ -746,7 +781,7 @@ func _refresh_shop_item_list() -> void:
 		var footer := Label.new()
 		footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		footer.add_theme_font_size_override("font_size", 17)
+		footer.add_theme_font_size_override("font_size", 20)
 		footer.modulate = Color(0.96, 0.96, 0.9, 0.9)
 		var prefix: String = "已选择" if is_selected else ("悬停中" if is_hovered else "可购买")
 		footer.text = "%s | %s" % [prefix, String(item_data.get("state_text", ""))]

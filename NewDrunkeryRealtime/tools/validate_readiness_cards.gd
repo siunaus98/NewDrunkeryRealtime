@@ -22,13 +22,18 @@ func key() -> InputEventKey:
 func run() -> void:
 	check(Defs.cards_for_day({"map_mechanism_ids": []}).is_empty(), "Ordinary mechanism-free day needs no briefing")
 	var entries: Array[Dictionary] = Defs.cards_for_day({"map_mechanism_ids": [&"scarab", &"sandstorm", &"quicksand"], "boss_enhanced_map_mechanism_id": &"monitor"})
-	check(entries.size() == 5, "All active mechanisms and boss/finale receive cards")
+	check(entries.size() == 4, "Three mechanisms and boss receive cards without a special customer repeat")
+	var seen := {&"scarab": true, &"sandstorm": true, &"quicksand": true}
+	check(Defs.cards_for_day({"map_mechanism_ids": [&"scarab", &"sandstorm", &"quicksand"]}, seen).is_empty(), "Previously read mechanisms are not repeated")
+	check(Defs.cards_for_day({"map_mechanism_ids": [&"scarab"], "boss_enhanced_map_mechanism_id": &"scarab"}, seen).size() == 1, "Boss briefing remains even when its mechanism was read")
 	for entry: Dictionary in entries:
 		check(ResourceLoader.exists(entry.image) and not String(entry.body).is_empty(), "Briefing has real artwork and instruction text")
 	var cards := Cards.new()
 	root.add_child(cards)
 	cards.open(entries)
 	cards.set_process(false)
+	check(cards.preview.visible and cards.preview.get_child_count() == 2, "Mechanism has two static in-game examples")
+	check(get_nodes_in_group("scarab_enemies").is_empty(), "Static samples cannot enter gameplay queries")
 	check(paused and cards.visible, "Card freezes gameplay")
 	cards._input(key())
 	check(cards.index == 0, "Opening key cannot skip first card")
@@ -76,6 +81,12 @@ func run() -> void:
 	flow.day_briefing._input(key())
 	check(flow.get_current_level_state() == preload("res://Scripts/Core/LevelContext.gd").LevelState.PREPARE_PHASE and not paused, "Final confirmation begins real preparation")
 	check(main.get_node("Player").input_gate.is_blocked(&"dash"), "Confirmation input is isolated from dash")
+	check(flow.progression_state.seen_mechanism_briefings.has(&"scarab"), "Reading a real briefing records the mechanism")
+	var restored := preload("res://Scripts/Core/RunProgressionState.gd").new()
+	restored.apply_snapshot(flow.progression_state.get_snapshot())
+	check(restored.seen_mechanism_briefings.has(&"scarab"), "Read state survives day snapshots")
+	restored.reset(12)
+	check(restored.seen_mechanism_briefings.is_empty(), "A new run introduces mechanisms again")
 	Input.action_release("dash")
 	main.queue_free()
 	paused = false

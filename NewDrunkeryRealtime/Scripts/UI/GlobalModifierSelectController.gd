@@ -3,6 +3,9 @@ extends "res://Scripts/UI/OrderGroupSelectController.gd"
 const Defs = preload("res://Scripts/Progression/RunModifierDefs.gd")
 var mode: StringName = &"offer"
 
+func _init() -> void:
+	card_font_scale = 1.4
+
 func open_offers(offers: Array[Dictionary]) -> void:
 	mode = &"offer"
 	var cards: Array[Dictionary] = []

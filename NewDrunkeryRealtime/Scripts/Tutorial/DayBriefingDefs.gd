@@ -12,13 +12,14 @@ const BOSSES := {
 	&"monitor": {"title": "沙海终宴 · 巨蜥评审", "image": "res://ArtResource/Generated/Enemy/monitor_boss.svg", "body": "绕到背后攻击弱点，利用咬击、扑击后的空隙输出。\n\n在料理区标记处献上食物，半血后需要两份；漏交会损失食材箱库存。\n巨蜥把食物收回嘴里后才会眩晕，菜品还能直接造成伤害。\n被口水封锁的设施需按住 K 修理，拖延会摧毁台面食物并进入深度失控。"}
 }
 
-static func cards_for_day(group: Dictionary) -> Array[Dictionary]:
+static func cards_for_day(group: Dictionary, seen_mechanisms: Dictionary = {}) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for id: Variant in group.get("map_mechanism_ids", []):
-		if MECHANISMS.has(StringName(id)):
-			result.append(MECHANISMS[StringName(id)].duplicate(true))
+		if MECHANISMS.has(StringName(id)) and not seen_mechanisms.has(StringName(id)):
+			var card: Dictionary = MECHANISMS[StringName(id)].duplicate(true)
+			card["mechanism_id"] = StringName(id)
+			result.append(card)
 	var boss := StringName(group.get("boss_enhanced_map_mechanism_id", &""))
 	if BOSSES.has(boss):
 		result.append(BOSSES[boss].duplicate(true))
-		result.append({"title": "特殊客人 · 营业后还有收尾", "image": "res://ArtResource/Restaurant/goddess_statue.svg", "body": "备菜期间通过女神像可前往 BOSS 战斗区，击败 BOSS 后记得带回专属食材。\n\n营业时间结束后，普通客人停止到店，特殊客人逐道点单。\n先接单，再按当前菜谱上菜；只显示当前一道及剩余道数。\n特殊客人有独立耐心，满足全部菜品后才能结束 BOSS 日。"})
 	return result

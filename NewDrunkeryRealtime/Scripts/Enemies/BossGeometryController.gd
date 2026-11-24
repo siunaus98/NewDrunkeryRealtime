@@ -5,6 +5,7 @@ const Defs = preload("res://Scripts/Enemies/BossGeometryDefs.gd")
 var boss: CharacterBody2D
 var data: Dictionary
 var body_shapes: Array[CollisionShape2D] = []
+var body_enabled: bool = true
 var debug_view: Node2D
 var debug_visible: bool = false
 var debug_layers: Array[StringName] = [&"body", &"hurt", &"contact"]
@@ -50,8 +51,9 @@ func _radius(radius: float, animated: bool) -> float:
 	return radius * (maxf(factor.x, factor.y) if animated else minf(factor.x, factor.y))
 
 func ground_transform() -> Transform2D:
-	var angle: float = boss.sprite.rotation if boss.boss_kind == &"monitor" else 0.0
-	return boss.global_transform * Transform2D(angle, boss.base_sprite_scale, 0.0, boss.base_sprite_position)
+	# Follow the current visible position and heading, retaining the smaller
+	# authored blocking size instead of stretching it with squash animation.
+	return boss.global_transform * Transform2D(boss.sprite.rotation, boss.base_sprite_scale, 0.0, boss.sprite.position)
 
 func sync_ground() -> void:
 	if data.is_empty():
@@ -59,6 +61,13 @@ func sync_ground() -> void:
 	var transform := boss.global_transform.affine_inverse() * ground_transform()
 	for i in body_shapes.size():
 		body_shapes[i].position = transform * _pixel(data.body[i])
+	# Sync can run several times per tick. Queue physics changes only when the
+	# airborne state changes, avoiding an unbounded deferred-call backlog.
+	var enabled := contact_active()
+	if enabled != body_enabled:
+		body_enabled = enabled
+		for shape: CollisionShape2D in body_shapes:
+			shape.set_deferred("disabled", not enabled)
 	if debug_view != null:
 		debug_view.queue_redraw()
 
@@ -66,7 +75,7 @@ func regions(layer: StringName) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	if data.is_empty():
 		return result
-	var animated := layer == &"hurt"
+	var animated := layer in [&"hurt", &"contact"]
 	var transform: Transform2D = boss.sprite.global_transform if animated else ground_transform()
 	for circle: Vector3 in data.get(layer, []):
 		result.append({"position": transform * _pixel(circle), "radius": _radius(circle.z, animated)})
@@ -82,9 +91,11 @@ func ground_extent() -> Vector2:
 			var reach := center.length() + _radius(circle.z, false)
 			extent = extent.max(Vector2.ONE * reach)
 		return extent
-	for circle: Dictionary in regions(&"body"):
-		var offset: Vector2 = circle.position - boss.global_position
-		extent = extent.max(offset.abs() + Vector2.ONE * float(circle.radius))
+	# Bounds must not change as the sprite lunges or rises during a skill.
+	var neutral := boss.global_transform * Transform2D(0.0, boss.base_sprite_scale, 0.0, boss.base_sprite_position)
+	for circle: Vector3 in data.body:
+		var offset: Vector2 = neutral * _pixel(circle) - boss.global_position
+		extent = extent.max(offset.abs() + Vector2.ONE * _radius(circle.z, false))
 	return extent
 
 func point_in_contact(point: Vector2, player_radius: float = 0.0) -> bool:
@@ -101,7 +112,7 @@ func contact_active() -> bool:
 	# an invisible old footprint on the ground. Landing skills own their AoE.
 	if boss.state != boss.AttackState.WINDUP:
 		return true
-	if boss.attack == boss.Attack.LEAP or (boss.boss_kind == &"monitor" and boss.attack == boss.Attack.STING):
+	if boss.attack in [boss.Attack.LEAP, boss.Attack.DIVE] or (boss.boss_kind == &"monitor" and boss.attack == boss.Attack.STING):
 		return false
 	return boss.sprite.position.y >= boss.base_sprite_position.y - 40.0
 

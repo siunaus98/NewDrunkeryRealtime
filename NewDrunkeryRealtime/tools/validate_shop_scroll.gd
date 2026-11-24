@@ -38,7 +38,11 @@ func _run() -> void:
 	shop.move_category_selection(2)
 	await settle_layout()
 	check(paused and shop.shop_scroll.is_visible_in_tree(), "Exercise actual paused shop UI")
-	check(is_equal_approx(shop.shop_scroll.size.y, 574), "Shop viewport fits exactly two 280px rows and their gap")
+	var card_height: float = shop.shop_item_panels[0].size.y
+	var row_gap: int = shop.shop_item_list.get_theme_constant("v_separation")
+	check(absf(shop.shop_scroll.size.y - (card_height * 2 + row_gap)) <= 1.0, "Shop viewport fits two complete enlarged rows")
+	check(shop.shop_item_list.size.x >= shop.shop_scroll.size.x * 0.95, "Product grid uses the full shop width")
+	check(shop.shop_category_tabs.get_node("ShopWallet").text == "金币  %d" % flow.progression_state.gold, "Wallet is visible in the category header")
 	check(root.get_visible_rect().encloses(flow.overlay_controller.overlay_panel.get_global_rect()), "Shop panel stays inside screen")
 	shop.move_selection_2d(1, 0)
 	await settle_layout()
