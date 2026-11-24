@@ -41,6 +41,12 @@ var pending_forge_selection: int = 0
 var reward_forge_active: bool = false
 var scroll_request_id: int = 0
 
+const SHOP_FACILITY_LIMITS := {
+	&"prep_table": 2,
+	&"conveyor": 2,
+	&"lamp": 1,
+}
+
 func configure_ui(
 	new_overlay_title_label: Label,
 	new_overlay_body_label: Label,
@@ -333,10 +339,10 @@ func _rebuild_merchant_shop_items() -> void:
 	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"magic_capacity", "蓝晶酒袋", "提高魔力上限。", 13, "魔力上限提高"))
 	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"magic_regen", "泉眼滤芯", "加快魔力恢复。", 15, "魔力恢复更快"))
 	merchant_shop_items.append(_build_kitchen_upgrade_shop_item(&"station_speed", "厨具改良", "提高料理台的加工效率。", 24, "加工速度提高"))
-	merchant_shop_items.append(_build_facility_shop_item(&"prep_table", "备料桌", "存放食材、小料盒与盘子。", 10, "增加备料空间"))
+	_append_manual_facility_if_available(&"prep_table", "备料桌", "存放食材、小料盒与盘子。", 10, "增加备料空间")
 	merchant_shop_items.append(_build_frozen_food_shop_item())
-	merchant_shop_items.append(_build_facility_shop_item(&"conveyor", "履带", "沿固定方向运送物品和玩家。", 14, "推动玩家/物品"))
-	merchant_shop_items.append(_build_facility_shop_item(&"lamp", "明光灯", "提高附近设施的工作效率。", 16, "附近设施效率提高"))
+	_append_manual_facility_if_available(&"conveyor", "履带", "沿固定方向运送物品和玩家。", 14, "推动玩家/物品")
+	_append_manual_facility_if_available(&"lamp", "明光灯", "提高附近设施的工作效率。", 16, "附近设施效率提高")
 	for entry: Dictionary in preload("res://Scripts/Facilities/FacilityCatalog.gd").ENTRIES:
 		var id := StringName(entry.id)
 		var count: int = progression_state.get_stat_purchase_count(StringName("facility_%s" % id)) if progression_state != null else 0
@@ -363,6 +369,19 @@ func _build_forklift_repair_item() -> Dictionary:
 		"title": "修理铲车", "description": "修复受损的铲车。",
 		"cost": vehicle.get_repair_cost(), "state_text": "当前耐久 %d/%d" % [vehicle.health, vehicle.MAX_HEALTH]
 	}
+
+func _facility_shop_limit(facility_type: StringName) -> int:
+	if SHOP_FACILITY_LIMITS.has(facility_type):
+		return int(SHOP_FACILITY_LIMITS[facility_type])
+	var definition := preload("res://Scripts/Facilities/FacilityCatalog.gd").definition(facility_type)
+	return int(definition.get("limit", 0))
+
+func _append_manual_facility_if_available(facility_type: StringName, title: String, description: String, cost: int, state_text: String) -> void:
+	var shop_id := StringName("facility_%s" % String(facility_type))
+	var count: int = progression_state.get_stat_purchase_count(shop_id) if progression_state != null else 0
+	if _facility_shop_limit(facility_type) > 0 and count >= _facility_shop_limit(facility_type):
+		return
+	merchant_shop_items.append(_build_facility_shop_item(facility_type, title, description, cost, state_text))
 
 func _build_stat_shop_item(stat_id: StringName, title: String, description: String, base_cost: int, detail: String) -> Dictionary:
 	var purchase_count: int = progression_state.get_stat_purchase_count(stat_id) if progression_state != null else 0
@@ -504,7 +523,7 @@ func _build_facility_shop_item(facility_type: StringName, title: String, descrip
 		"title": title,
 		"description": description,
 		"cost": base_cost + purchase_count * 4,
-		"state_text": "%s | 已购买 %d 个" % [state_text, purchase_count],
+		"state_text": "%s | 已购买 %d/%d 个" % [state_text, purchase_count, _facility_shop_limit(facility_type)],
 		"facility_type": facility_type
 	}
 
@@ -555,11 +574,11 @@ func _purchase_frozen_food(item_data: Dictionary) -> bool:
 func _purchase_facility(item_data: Dictionary) -> bool:
 	var facility_type := StringName(item_data.get("facility_type", &""))
 	var catalog = preload("res://Scripts/Facilities/FacilityCatalog.gd")
-	if not catalog.definition(facility_type).is_empty():
-		var count: int = progression_state.get_stat_purchase_count(StringName(item_data.id)) if progression_state != null else 0
-		if not catalog.available(facility_type, count):
-			pending_shop_message = "该设施已达到购买上限。"
-			return false
+	var limit := _facility_shop_limit(facility_type)
+	var count: int = progression_state.get_stat_purchase_count(StringName(item_data.id)) if progression_state != null else 0
+	if limit > 0 and count >= limit:
+		pending_shop_message = "该设施已达到购买上限。"
+		return false
 	if not facility_purchase_callback.is_valid():
 		return false
 	if not bool(facility_purchase_callback.call(item_data)):

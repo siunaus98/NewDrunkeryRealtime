@@ -45,6 +45,8 @@ func _run() -> void:
 	var indices: Array[int] = shop._get_shop_item_indices_for_category(2)
 	for item: Dictionary in shop.merchant_shop_items:
 		check(item.id not in [&"facility_cut_station", &"facility_roast_station", &"facility_grind_station"], "Single-player shop omits duplicate basic cooking stations")
+		if item.id in [&"facility_prep_table", &"facility_conveyor", &"facility_lamp"]:
+			check(String(item.state_text).contains("/"), "Manual facility shows a finite purchase limit")
 	var first_panel: Control = shop.shop_item_panel_by_index[indices.front()]
 	check(selection_visible(), "First selection is visible")
 	var scroll_rect: Rect2 = shop.shop_scroll.get_global_rect()
