@@ -375,7 +375,7 @@ func _update_current_instruction() -> void:
 			else: _guide("走过去触碰禽肉就自动进入库存，不用按 J，也不用空出双手。", get_tree().get_nodes_in_group("battle_drops"))
 		SKILLS: _guide_skills()
 		NIGHT:
-			if info_page == 0: _guide("营业结束后才会选择下一天的新菜，今天记住流程就好，不用实操。夜间还可选祝福、逛商店、遇访客。")
+			if info_page == 0: _guide("营业结束后才会选择下一天的新菜，今天记住流程就好，不用实操。夜间还可选祝福、逛商店、遇访客；女神的祝福法术会让夜间搬运设施恢复正常速度。")
 			elif flow.get_owned_blessing_ids().is_empty(): _guide("面对女神像按 J 祈福。祝福不合心意可按 L 刷新当前选项；刷新次数整局共享，别一口气花光哦。", ["BlessingStatue"])
 			else: _guide("烤台旁有访客啦。靠近带 ! 的小家伙按 J 交谈，接受或谢绝都可以。梵倪拉前辈说，收工也得看人情。", [flow.night_event_controller.npcs.get(&"furnace")])
 		BOSS:

@@ -731,6 +731,10 @@ func get_run_modifier_multiplier(key: StringName) -> float:
 func get_facility_carry_move_multiplier() -> float:
 	return carried_facility_move_speed_multiplier if is_carrying_facility() and not _is_night_rest_active() else 1.0
 
+func get_carried_facility_magic_cost() -> int:
+	# Rearranging existing facilities is free. Daytime only applies the movement penalty.
+	return 0
+
 func _get_support_facility_move_multiplier() -> float:
 	return SupportFacilityAuraQuery.get_movement_multiplier(get_tree(), global_position)
 

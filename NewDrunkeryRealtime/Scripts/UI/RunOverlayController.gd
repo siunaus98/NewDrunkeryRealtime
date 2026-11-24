@@ -208,8 +208,8 @@ func build_overlay(
 	add_child(toast_layer)
 	toast_label = Label.new()
 	toast_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	toast_label.offset_top = 150.0
-	toast_label.offset_bottom = 232.0
+	toast_label.offset_top = 850.0
+	toast_label.offset_bottom = 1015.0
 	toast_label.offset_left = 260.0
 	toast_label.offset_right = -260.0
 	toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

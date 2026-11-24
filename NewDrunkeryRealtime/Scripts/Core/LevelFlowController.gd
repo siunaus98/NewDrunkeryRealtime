@@ -648,6 +648,8 @@ func _enter_night_rest() -> void:
 	if run_status_hud != null and run_status_hud.has_method("set_status_visible"):
 		run_status_hud.set_status_visible(true)
 	_update_debug_label()
+	if not tutorial_mode and progression_state != null and progression_state.day_index == 0 and overlay_controller != null:
+		overlay_controller.show_toast("第一晚可以先整理料理区：空手按 K 搬运设施，白天搬运不耗魔力但会变慢、不能冲刺；整理好后，到组合台按 J 开启营业。", 14.0)
 
 func _enter_order_group_select() -> void:
 	if tutorial_mode:
@@ -1654,8 +1656,15 @@ func _remap_order_targets_to_unlocked_serving_counters(group_data: Dictionary) -
 func _sync_storage_cabinets_to_current_menu() -> void:
 	var ingredient_ids := _collect_current_menu_ingredient_ids()
 	for cabinet in get_tree().get_nodes_in_group("storage_facilities"):
-		if is_instance_valid(cabinet) and cabinet.has_method("set_menu_allowed_item_ids"):
-			cabinet.set_menu_allowed_item_ids(ingredient_ids)
+		if not is_instance_valid(cabinet) or not cabinet.has_method("set_menu_allowed_item_ids"):
+			continue
+		cabinet.set_menu_allowed_item_ids(ingredient_ids)
+		# The initial kitchen should not force a new player to move decorative
+		# stone cabinets out of the way. Re-enable a cabinet when its ingredient
+		# enters the active menu on a later night.
+		if cabinet.has_method("get") and cabinet.get("stored_item_id") != null:
+			var needed: bool = StringName(cabinet.get("stored_item_id")) in ingredient_ids
+			_set_runtime_facility_visible(cabinet, needed)
 
 func _sync_kitchen_unlocks_to_current_menu() -> void:
 	# The first region gives all three processing stations from the start.

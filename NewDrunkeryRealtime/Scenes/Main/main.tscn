@@ -128,52 +128,52 @@ body_highlight_color = Color(0.58, 0.52, 0.38, 1)
 accent_color = Color(0.94, 0.66, 0.16, 1)
 
 [node name="StorageCabinetRedManeLamb" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1600, 832)
+position = Vector2(1984, 704)
 stored_item_id = &"meat_red"
 
 
 [node name="StorageCabinetDesertBird" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1728, 832)
+position = Vector2(2112, 704)
 stored_item_id = &"meat_white"
 
 [node name="StorageCabinetSandHare" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1856, 832)
+position = Vector2(2240, 704)
 stored_item_id = &"sand_hare"
 
 [node name="StorageCabinetCrispSprout" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1984, 832)
+position = Vector2(2368, 704)
 stored_item_id = &"crisp_sprout"
 
 [node name="StorageCabinetCamelMeat" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1600, 960)
+position = Vector2(1984, 832)
 stored_item_id = &"camel_meat"
 
 [node name="StorageCabinetDryfrostCabbage" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1728, 960)
+position = Vector2(2112, 832)
 stored_item_id = &"dryfrost_cabbage"
 
 [node name="StorageCabinetSunnyBerry" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1856, 960)
+position = Vector2(2240, 832)
 stored_item_id = &"sunny_berry"
 
 [node name="StorageCabinetSandPotato" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1984, 960)
+position = Vector2(2368, 832)
 stored_item_id = &"sand_potato"
 
 [node name="StorageCabinetStoneBloom" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1600, 1088)
+position = Vector2(1984, 960)
 stored_item_id = &"stone_bloom"
 
 [node name="StorageCabinetDill" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1728, 1088)
+position = Vector2(2112, 960)
 stored_item_id = &"dill"
 
 [node name="StorageCabinetGoldenWheat" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1856, 1088)
+position = Vector2(2240, 960)
 stored_item_id = &"golden_wheat"
 
 [node name="StorageCabinetSunSeed" parent="." instance=ExtResource("22_storage_cabinet")]
-position = Vector2(1984, 1088)
+position = Vector2(2368, 960)
 stored_item_id = &"sun_seed"
 
 [node name="IngredientSlot06" type="Marker2D" parent="."]

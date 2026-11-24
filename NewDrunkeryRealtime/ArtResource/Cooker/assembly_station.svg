@@ -1,3 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 256 256" data-art-direction="soft-desert-v2">
-<rect x="15" y="156" width="226" height="19" rx="2" fill="#a96638" stroke="#513420" stroke-width="3" data-base-fill="#a96638" /><rect x="21" y="160" width="214" height="10" rx="2" fill="#ca8a50" stroke="#754829" stroke-width="2" data-base-fill="#ca8a50" /><rect x="123.0" y="162" width="10" height="2" rx="2" fill="#f3cc7c" stroke="none" stroke-width="0" data-base-fill="#f3cc7c" /><rect x="12" y="58" width="232" height="98" rx="2" fill="#edb86a" stroke="#513420" stroke-width="3" data-base-fill="#edb86a" /><rect x="16" y="62" width="224" height="89" rx="2" fill="#d79550" stroke="none" stroke-width="4" data-base-fill="#d79550" /><path d="M17 63h222" fill="none" stroke="#ffdc94" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" /><rect x="20" y="66" width="216" height="79" rx="2" fill="#e9c68b" stroke="#bd8246" stroke-width="2" data-base-fill="#e9c68b" /><path d="M25 71h206" fill="none" stroke="#f8dcaa" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 256 256" data-art-direction="assembly-kitchen-v3">
+<defs>
+ <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#f2c277"/><stop offset="1" stop-color="#c77b40"/></linearGradient>
+ <linearGradient id="top" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffe0a0"/><stop offset="1" stop-color="#d99a51"/></linearGradient>
+</defs>
+<!-- warm counter body -->
+<path d="M15 157h226v19H15z" fill="#9a5a32" stroke="#513420" stroke-width="3"/>
+<path d="M21 161h214v10H21z" fill="#c68146" stroke="#754829" stroke-width="2"/>
+<path d="M27 175h18v43H27zM211 175h18v43h-18z" fill="#754528" stroke="#513420" stroke-width="3"/>
+<path d="M12 55Q12 48 20 48h216q8 0 8 7v105H12z" fill="url(#wood)" stroke="#513420" stroke-width="3"/>
+<path d="M18 62h220v92H18z" fill="url(#top)" stroke="#bd8246" stroke-width="3"/>
+<!-- six clearly readable combination bays -->
+<path d="M29 73h198v70H29z" fill="#b97842" stroke="#8b542f" stroke-width="2"/>
+<path d="M35 79h186v58H35z" fill="#dca15c" stroke="#f8dca8" stroke-width="2"/>
+<g fill="#f5d598" stroke="#9c6034" stroke-width="2">
+ <circle cx="59" cy="98" r="10"/><circle cx="96" cy="98" r="10"/><circle cx="133" cy="98" r="10"/>
+ <circle cx="59" cy="122" r="10"/><circle cx="96" cy="122" r="10"/><circle cx="133" cy="122" r="10"/>
+</g>
+<!-- central recipe sigil and assembly arrows -->
+<circle cx="181" cy="110" r="23" fill="#f3c96e" stroke="#754829" stroke-width="3"/>
+<circle cx="181" cy="110" r="13" fill="#ffe8a8" stroke="#bd8246" stroke-width="2"/>
+<path d="M177 101l10 9-10 9M184 110h-10" fill="none" stroke="#9b5c32" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M123 162h10" stroke="#f3cc7c" stroke-width="2" stroke-linecap="round"/>
 </svg>
