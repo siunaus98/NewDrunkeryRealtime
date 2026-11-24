@@ -18,6 +18,16 @@ func check(ok: bool, message: String) -> void:
 func settle() -> void:
 	for index in range(8): await process_frame
 
+func press_key(key: Key) -> void:
+	var event := InputEventKey.new()
+	event.keycode = key
+	event.pressed = true
+	root.push_input(event)
+	event = InputEventKey.new()
+	event.keycode = key
+	event.pressed = false
+	root.push_input(event)
+
 func hold(id: StringName, state: StringName = &"") -> void:
 	actor.clear_held_item()
 	actor.pick_up_item(id, Items.get_item_texture(id), state)
@@ -109,7 +119,7 @@ func run() -> void:
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://_artifact_work/tutorial"))
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png("res://_artifact_work/tutorial/selector.png")
-	current_scene.start_lesson(0)
+	press_key(KEY_ENTER)
 	await settle()
 	main = current_scene
 	tutorial = main.get_node("TutorialController")
@@ -375,7 +385,8 @@ func run() -> void:
 	await settle()
 	check(current_scene.cards.size() == 12 and not has_meta("run_setup"), "Leaving tutorial returns to lesson selection")
 	for chosen in range(12):
-		current_scene.start_lesson(chosen)
+		current_scene._select(chosen)
+		press_key(KEY_ENTER if chosen % 2 == 0 else KEY_SPACE)
 		await settle()
 		main = current_scene
 		tutorial = main.get_node("TutorialController")
@@ -384,8 +395,14 @@ func run() -> void:
 		check_lesson_layout()
 		tutorial._leave()
 		await settle()
-	current_scene._back()
+	press_key(KEY_ESCAPE)
 	await settle()
+	check(current_scene.get_script() == load("res://Scripts/UI/GameStartController.gd"), "Escape safely returns from selector to title")
+	current_scene._start_tutorial()
+	await settle()
+	press_key(KEY_K)
+	await settle()
+	check(current_scene.get_script() == load("res://Scripts/UI/GameStartController.gd"), "K safely returns from selector to title")
 	current_scene._start_run()
 	await settle()
 	var normal_flow: Node = current_scene.get_node("LevelFlowController")

@@ -91,6 +91,9 @@ func _select(index: int) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed or event.echo: return
+	if event.keycode not in [KEY_W, KEY_UP, KEY_S, KEY_DOWN, KEY_A, KEY_LEFT, KEY_D, KEY_RIGHT, KEY_ENTER, KEY_SPACE, KEY_ESCAPE, KEY_K]: return
+	# Scene changes detach this Control immediately, so consume input first.
+	get_viewport().set_input_as_handled()
 	match event.keycode:
 		KEY_W, KEY_UP: _select(selected - 4)
 		KEY_S, KEY_DOWN: _select(selected + 4)
@@ -98,8 +101,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_D, KEY_RIGHT: _select(selected + 1)
 		KEY_ENTER, KEY_SPACE: start_lesson(selected)
 		KEY_ESCAPE, KEY_K: _back()
-		_: return
-	get_viewport().set_input_as_handled()
 
 func start_lesson(index: int) -> void:
 	get_tree().set_meta("run_setup", {"tutorial": true, "tutorial_step": clampi(index, 0, Lessons.BOSS), "small_skill_variant": &"rush_order", "big_skill_variant": &"steady_pot"})
